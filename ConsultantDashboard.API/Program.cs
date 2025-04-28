@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using ConsultantDashboard.Services.IImplement;
+using ConsultantDashboard.Services.Implement;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,12 @@ builder.Configuration
 
 // Make IConfiguration injectable
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
+builder.Services.AddScoped<ICustomerAppointmentService, CustomerAppointmentService>();
+builder.Services.AddScoped<IConsultationPlanService, ConsultationPlanService>();
+builder.Services.AddScoped<IConsultantProfileService, ConsultantProfileService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 
 
 

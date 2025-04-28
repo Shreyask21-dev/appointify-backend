@@ -9,32 +9,33 @@ using System.Text;
 using ConsultantDashboard.Services.IImplement;
 using ConsultantDashboard.Core.DTOs;
 
-
-[ApiController]
-[Route("api/[controller]")]
-public class PatientAuthController : ControllerBase
+namespace ConsultantDashboard.API.Controllers
 {
-    private readonly IPatientAuthService _authService;
-
-    public PatientAuthController(IPatientAuthService authService)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class PatientAuthController : ControllerBase
     {
-        _authService = authService;
-    }
+        private readonly IPatientAuthService _authService;
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register(PatientRegisterDTO model)
-    {
-        var result = await _authService.RegisterAsync(model);
-        if (result == "Email already registered.") return BadRequest(result);
-        return Ok(result);
-    }
+        public PatientAuthController(IPatientAuthService authService)
+        {
+            _authService = authService;
+        }
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login(PatientLoginDTO model)
-    {
-        var token = await _authService.LoginAsync(model);
-        if (token == null) return Unauthorized("Invalid email or password.");
-        return Ok(new { token });
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(PatientRegisterDTO model)
+        {
+            var result = await _authService.RegisterAsync(model);
+            if (result == "Email already registered.") return BadRequest(result);
+            return Ok(result);
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(PatientLoginDTO model)
+        {
+            var token = await _authService.LoginAsync(model);
+            if (token == null) return Unauthorized("Invalid email or password.");
+            return Ok(new { token });
+        }
     }
 }
-
