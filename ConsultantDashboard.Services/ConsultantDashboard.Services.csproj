@@ -27,4 +27,10 @@
     <ProjectReference Include="..\ConsultantDashboard.Infrastructure\ConsultantDashboard.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="CoinageInc.Logger">
+      <HintPath>..\external_refernces\CoinageInc.Logger.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

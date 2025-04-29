@@ -1,4 +1,4 @@
-﻿namespace ConsultantDashboard.Appointify.Core.DTOs
+﻿namespace ConsultantDashboard.Core.DTOs
 {
     public class RegisterConsultantDTOs
     {

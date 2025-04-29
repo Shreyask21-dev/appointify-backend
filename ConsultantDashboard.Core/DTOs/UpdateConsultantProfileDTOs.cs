@@ -15,6 +15,7 @@ namespace ConsultantDashboard.Core.DTOs
 
             public IFormFile? ProfileImage { get; set; }
             public IFormFile? BackgroundImage { get; set; }
+            public IFormFile? Section2_Image { get; set; }
 
             public string? Email { get; set; }
             public string? Experience { get; set; }

@@ -60,6 +60,7 @@ namespace ConsultantDashboard.Services.Implement
                 Section3_Description = dto.Section3_Description
             };
 
+            // ✅ Save uploaded images if available
             if (profileImage != null)
                 newProfile.ProfileImage = await SaveFileAsync(profileImage, "profileImages");
 
@@ -81,7 +82,7 @@ namespace ConsultantDashboard.Services.Implement
 
             if (consultant == null)
             {
-                // Create new if not exists
+                // If no existing profile, create a new one
                 return await AddConsultantProfileAsync(new AddConsultantProfileDTOs
                 {
                     FullName = dto.FullName,
@@ -108,6 +109,7 @@ namespace ConsultantDashboard.Services.Implement
                 }, profileImage, backgroundImage);
             }
 
+            // ✅ Save uploaded images if available
             if (profileImage != null)
                 consultant.ProfileImage = await SaveFileAsync(profileImage, "profileImages");
 
@@ -117,6 +119,7 @@ namespace ConsultantDashboard.Services.Implement
             if (section3_Image != null)
                 consultant.Section3_Image = await SaveFileAsync(section3_Image, "section3_Image");
 
+            // Update text fields (only if new value provided)
             consultant.FullName = dto.FullName ?? consultant.FullName;
             consultant.Role = dto.Role ?? consultant.Role;
             consultant.Location = dto.Location ?? consultant.Location;
@@ -160,6 +163,7 @@ namespace ConsultantDashboard.Services.Implement
             using var stream = new FileStream(fullPath, FileMode.Create);
             await file.CopyToAsync(stream);
 
+            // Save as relative path (useful for accessing via web later)
             return $"/{folderName}/{fileName}";
         }
     }

@@ -1,4 +1,4 @@
-﻿using ConsultantDashboard.Appointify.Core.DTOs;
+﻿using ConsultantDashboard.Core.DTOs;
 using ConsultantDashboard.Core.DTOs;
 using ConsultantDashboard.Services.IImplement;
 using Microsoft.AspNetCore.Authorization;

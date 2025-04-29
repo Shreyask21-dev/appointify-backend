@@ -1,16 +1,13 @@
-﻿using ConsultantDashboard.Appointify.Core.DTOs;
-using ConsultantDashboard.Core.DTOs;
+﻿using ConsultantDashboard.Core.DTOs;
 using ConsultantDashboard.Core.Models;
 using ConsultantDashboard.Services.IImplement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
+
 
 namespace ConsultantDashboard.Services.Implement
 {

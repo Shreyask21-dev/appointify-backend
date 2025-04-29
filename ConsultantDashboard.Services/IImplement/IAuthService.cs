@@ -1,5 +1,4 @@
-﻿using ConsultantDashboard.Appointify.Core.DTOs;
-using ConsultantDashboard.Core.DTOs;
+﻿using ConsultantDashboard.Core.DTOs;
 using ConsultantDashboard.Core.Models;
 using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;

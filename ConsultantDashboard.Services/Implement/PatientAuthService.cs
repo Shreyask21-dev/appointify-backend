@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using ConsultantDashboard.Core.DTOs;
-using ConsultantDashboard.Core.Entities;
 using ConsultantDashboard.Core.Models;
 using ConsultantDashboard.Infrastructure.Data;
 using ConsultantDashboard.Services.IImplement;
