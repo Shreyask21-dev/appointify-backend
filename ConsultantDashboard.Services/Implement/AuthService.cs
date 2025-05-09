@@ -123,6 +123,21 @@ namespace ConsultantDashboard.Services.Implement
             return (true, "Password has been reset successfully");
         }
 
+        public async Task<(bool Success, string Message)> ChangePasswordAsync(string userId, string currentPassword, string newPassword, string confirmPassword)
+        {
+            if (newPassword != confirmPassword)
+                return (false, "New password and confirm password do not match");
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return (false, "User not found");
+
+            var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+            if (!result.Succeeded)
+                return (false, "Current password is incorrect or password change failed");
+
+            return (true, "Password changed successfully");
+        }
         private string GenerateJwtToken(ApplicationUser user)
         {
             var claims = new List<Claim>

@@ -22,12 +22,7 @@ namespace ConsultantDashboard.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost("VerifyPayment")]
-        public async Task<IActionResult> VerifyPayment([FromBody] PaymentResponse response)
-        {
-            var result = await _appointmentService.VerifyPaymentAsync(response);
-            return Ok(result);
-        }
+       
 
         [HttpGet("GetAllAppointments")]
         public async Task<IActionResult> GetAllAppointments()

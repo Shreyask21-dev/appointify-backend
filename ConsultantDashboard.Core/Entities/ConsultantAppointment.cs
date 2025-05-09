@@ -28,9 +28,6 @@ namespace ConsultantDashboard.Core.Entities
         public string OrderId { get; set; }
         public string AppointmentId { get; set; }
 
-        [Required]
-        public string PaymentStatus { get; set; }
-
         public DateTime AppointmentDateTime { get; set; }
 
         [Required]

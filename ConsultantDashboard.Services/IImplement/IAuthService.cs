@@ -12,5 +12,6 @@ namespace ConsultantDashboard.Services.IImplement
         Task<(bool Success, string Message)> UpdateProfileAsync(UpdateConsultantRegistrationProfileDTOs request, string userId);
         Task<(bool Success, string Message, string Token)> ForgotPasswordAsync(string email);
         Task<(bool Success, string Message)> ResetPasswordAsync(string email, string token, string newPassword);
+        Task<(bool Success, string Message)> ChangePasswordAsync(string userId, string currentPassword, string newPassword, string confirmPassword);
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ConsultantDashboard.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class ImagesTypeUpdated : Migration
+    public partial class update1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

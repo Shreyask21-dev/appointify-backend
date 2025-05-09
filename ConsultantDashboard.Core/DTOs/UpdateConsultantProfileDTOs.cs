@@ -12,11 +12,6 @@ namespace ConsultantDashboard.Core.DTOs
             public string? Countries { get; set; }
             public string? Languages { get; set; }
             public string? HospitalClinicAddress { get; set; }
-
-            public IFormFile? ProfileImage { get; set; }
-            public IFormFile? BackgroundImage { get; set; }
-            public IFormFile? Section2_Image { get; set; }
-
             public string? Email { get; set; }
             public string? Experience { get; set; }
 
@@ -36,6 +31,5 @@ namespace ConsultantDashboard.Core.DTOs
             public string? Description { get; set; }
             public string? Section3_Description { get; set; }
 
-            public IFormFile? Section3_Image { get; set; }
     }
 }

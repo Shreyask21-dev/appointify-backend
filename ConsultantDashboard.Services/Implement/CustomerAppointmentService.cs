@@ -28,7 +28,6 @@ namespace ConsultantDashboard.Services.Implement
                 model.Id = Guid.NewGuid();
                 model.CreatedDate = DateTime.UtcNow;
                 model.UpdatedDate = DateTime.UtcNow;
-                model.PaymentStatus = "Pending";
                 model.AppointmentStatus = "Pending";
 
                 await _context.CustomerAppointments.AddAsync(model);
@@ -44,7 +43,6 @@ namespace ConsultantDashboard.Services.Implement
                     Amount = model.Amount,
                     PaymentId = model.PaymentId,
                     OrderId = model.OrderId,
-                    PaymentStatus = PaymentStatus.Failed,
                     AppointmentDateTime = model.Time,
                     Duration = model.Duration,
                     AppointmentStatus = AppointmentStatus.Scheduled,
@@ -83,45 +81,7 @@ namespace ConsultantDashboard.Services.Implement
             }
         }
 
-        public async Task<object> VerifyPaymentAsync(PaymentResponse response)
-        {
-            var appointment = await _context.CustomerAppointments
-                .FirstOrDefaultAsync(a => a.Id == Guid.Parse(response.AppointmentId));
-
-            if (appointment == null)
-                throw new KeyNotFoundException("Customer Appointment not found.");
-
-            appointment.PaymentId = response.PaymentId;
-            appointment.OrderId = response.OrderId;
-            appointment.PaymentStatus = "Paid";
-            appointment.AppointmentStatus = "Confirmed";
-            appointment.UpdatedDate = DateTime.UtcNow;
-
-            _context.CustomerAppointments.Update(appointment);
-
-            var consultantAppointment = await _context.ConsultantAppointments
-                .FirstOrDefaultAsync(a => a.AppointmentId == response.AppointmentId);
-
-            if (consultantAppointment != null)
-            {
-                consultantAppointment.PaymentId = response.PaymentId;
-                consultantAppointment.OrderId = response.OrderId;
-                consultantAppointment.PaymentStatus = PaymentStatus.Captured;
-                consultantAppointment.UpdatedDate = DateTime.UtcNow;
-
-                _context.ConsultantAppointments.Update(consultantAppointment);
-            }
-
-            await _context.SaveChangesAsync();
-
-            return new
-            {
-                Message = "Payment verified and appointment confirmed.",
-                response.PaymentId,
-                PaymentStatus = "Paid"
-            };
-        }
-
+      
         public async Task<IEnumerable<object>> GetAllAppointmentsAsync()
         {
             return await _context.ConsultantAppointments
@@ -137,7 +97,6 @@ namespace ConsultantDashboard.Services.Implement
                     a.PaymentId,
                     a.AppointmentStatus,
                     a.AppointmentId,
-                    a.PaymentStatus,
                     a.Action,
                     a.Duration,
                     a.CreatedDate,
@@ -158,7 +117,6 @@ namespace ConsultantDashboard.Services.Implement
                     a.Amount,
                     a.Duration,
                     a.PaymentId,
-                    a.PaymentStatus,
                     a.AppointmentStatus,
                     a.AppointmentId
                 }).ToListAsync();

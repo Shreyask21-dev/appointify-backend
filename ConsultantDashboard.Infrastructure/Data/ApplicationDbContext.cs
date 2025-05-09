@@ -17,6 +17,14 @@ namespace ConsultantDashboard.Infrastructure.Data
         public DbSet<CustomerAppointments> CustomerAppointments { get; set; }
         public DbSet<ConsultantAppointment> ConsultantAppointments { get; set; }
         public DbSet<ConsultationPlan> ConsultationPlans { get; set; }
+        public DbSet<Stat> Stats { get; set; }
+
+        public DbSet<Section5Content> Section5Contents { get; set; }
+
+        public DbSet<Faq> Faqs{ get; set; }
+        public DbSet<Location> Locations { get; set; }
+        public DbSet<AppointmentRequest> AppointmentRequests { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -33,9 +41,7 @@ namespace ConsultantDashboard.Infrastructure.Data
                .Property(x => x.Id)
                .HasDefaultValueSql("NEWID()"); // This generates GUID
 
-            builder.Entity<ConsultantAppointment>()
-           .Property(e => e.PaymentStatus)
-           .HasConversion<string>(); // ✅ Store as string instead of int
+          // ✅ Store as string instead of int
 
             builder.Entity<ConsultantAppointment>()
                 .Property(e => e.AppointmentStatus)

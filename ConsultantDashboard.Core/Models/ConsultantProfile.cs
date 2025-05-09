@@ -37,8 +37,8 @@ namespace ConsultantDashboard.Core.Models
         public string? Section3_Tagline { get; set; }
 
         public string? Certificates { get; set; }
-        public string? Section3_Image { get; set; }
         public string? Section2_Image { get; set; }
+        public string? Section3_Image { get; set; }
         public string? Description { get; set; }
         public string? Section3_Description { get; set; }
     }

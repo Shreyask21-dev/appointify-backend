@@ -12,6 +12,8 @@ public class AuthServiceTests
     [Fact]
     public async Task RegisterAsync_ReturnsUserExists_WhenUserWithEmailAlreadyExists()
     {
+        //Arrange start
+
         // Step 1: Mock UserManager
         var mockUserManager = MockUserManager();
         mockUserManager.Setup(x => x.FindByEmailAsync("test@example.com"))
@@ -23,12 +25,18 @@ public class AuthServiceTests
 
         // Step 3: Create instance of AuthService
         var authService = new AuthService(mockUserManager.Object, mockSignInManager.Object, mockConfig.Object);
-
+        
         // Step 4: Fake input
         var request = new RegisterConsultantDTOs { Email = "test@example.com" };
 
+        //Arrange end
+
+        // Act start
+
         // Step 5: Call the method
         var result = await authService.RegisterAsync(request);
+
+        // Act end
 
         // Step 6: Assert
         Assert.False(result.Success);

@@ -20,7 +20,6 @@ namespace ConsultantDashboard.Core.Models
        
         public string? PhoneNumber { get; set; }
         public int TotalAppointments { get; set; }
-        public string? PaymentStatus { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow.AddHours(5).AddMinutes(30);
     }
 }

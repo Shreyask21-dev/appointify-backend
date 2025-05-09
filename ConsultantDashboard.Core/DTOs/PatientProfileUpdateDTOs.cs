@@ -10,6 +10,5 @@
         public string? Gender { get; set; }
         public DateTime CreatedDate { get; set; }
         public int TotalAppointments { get; set; }
-        public string PaymentStatus { get; set; }
     }
 }

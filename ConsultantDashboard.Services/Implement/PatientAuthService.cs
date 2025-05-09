@@ -52,7 +52,6 @@ namespace ConsultantDashboard.Services.Implement
                 Gender = patient.Gender,
                 TotalAppointments = 0,
                 PhoneNumber = patient.PhoneNumber,
-                PaymentStatus = "Pending",
                 CreatedDate = DateTime.UtcNow
             };
 

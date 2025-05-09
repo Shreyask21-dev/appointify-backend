@@ -32,9 +32,12 @@
   <ItemGroup>
     <ProjectReference Include="..\ConsultantDashboard.Core\ConsultantDashboard.Core.csproj" />
     <ProjectReference Include="..\ConsultantDashboard.Infrastructure\ConsultantDashboard.Infrastructure.csproj" />
-    <ProjectReference Include="..\ConsultantDashboard.Services.Test\ConsultantDashboard.Services.Test.csproj" />
     <ProjectReference Include="..\ConsultantDashboard.Services\ConsultantDashboard.Services.csproj" />
- 
+
+
+
   </ItemGroup>
+
+
 
 </Project>

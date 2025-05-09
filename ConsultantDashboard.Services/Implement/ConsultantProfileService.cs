@@ -2,6 +2,7 @@
 using ConsultantDashboard.Core.Models;
 using ConsultantDashboard.Infrastructure.Data;
 using ConsultantDashboard.Services.IImplement;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,10 +15,18 @@ namespace ConsultantDashboard.Services.Implement
     public class ConsultantProfileService : IConsultantProfileService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public ConsultantProfileService(ApplicationDbContext context)
+        // Folder constants
+        private const string ProfileImageFolder = "profileImages";
+        private const string BackgroundImageFolder = "backgroundImages";
+        private const string Section2ImageFolder = "section2_Image";
+        private const string Section3ImageFolder = "section3_Image";
+
+        public ConsultantProfileService(ApplicationDbContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         public async Task<List<ConsultantProfile>> GetConsultantProfilesAsync()
@@ -25,7 +34,7 @@ namespace ConsultantDashboard.Services.Implement
             return await _context.ConsultantProfile.ToListAsync();
         }
 
-        public async Task<(string message, ConsultantProfile profile)> AddConsultantProfileAsync(AddConsultantProfileDTOs dto, IFormFile? profileImage, IFormFile? backgroundImage)
+        public async Task<(string message, ConsultantProfile profile)> AddConsultantProfileAsync(AddConsultantProfileDTOs dto, IFormFile? profileImage, IFormFile? backgroundImage, IFormFile? section2_Image, IFormFile? section3_Image)
         {
             if (dto == null)
                 throw new ArgumentException("Invalid data submitted.");
@@ -62,10 +71,10 @@ namespace ConsultantDashboard.Services.Implement
 
             // ✅ Save uploaded images if available
             if (profileImage != null)
-                newProfile.ProfileImage = await SaveFileAsync(profileImage, "profileImages");
+                newProfile.ProfileImage = await SaveFileAsync(profileImage, ProfileImageFolder);
 
             if (backgroundImage != null)
-                newProfile.BackgroundImage = await SaveFileAsync(backgroundImage, "backgroundImages");
+                newProfile.BackgroundImage = await SaveFileAsync(backgroundImage, BackgroundImageFolder);
 
             await _context.ConsultantProfile.AddAsync(newProfile);
             await _context.SaveChangesAsync();
@@ -73,7 +82,7 @@ namespace ConsultantDashboard.Services.Implement
             return ("Consultant Profile Added Successfully!", newProfile);
         }
 
-        public async Task<(string message, ConsultantProfile profile)> UpdateConsultantProfileAsync(UpdateConsultantProfileDTOs dto, IFormFile? profileImage, IFormFile? backgroundImage, IFormFile? section3_Image)
+        public async Task<(string message, ConsultantProfile profile)> UpdateConsultantProfileAsync(UpdateConsultantProfileDTOs dto, IFormFile? profileImage, IFormFile? backgroundImage, IFormFile? section2_Image, IFormFile? section3_Image)
         {
             if (dto == null)
                 throw new ArgumentException("Invalid Data");
@@ -106,18 +115,21 @@ namespace ConsultantDashboard.Services.Implement
                     Description = dto.Description,
                     Section3_Tagline = dto.Section3_Tagline,
                     Section3_Description = dto.Section3_Description
-                }, profileImage, backgroundImage);
+                }, profileImage, backgroundImage, section3_Image, section2_Image);
             }
 
             // ✅ Save uploaded images if available
             if (profileImage != null)
-                consultant.ProfileImage = await SaveFileAsync(profileImage, "profileImages");
+                consultant.ProfileImage = await SaveFileAsync(profileImage, ProfileImageFolder);
 
             if (backgroundImage != null)
-                consultant.BackgroundImage = await SaveFileAsync(backgroundImage, "backgroundImages");
+                consultant.BackgroundImage = await SaveFileAsync(backgroundImage, BackgroundImageFolder);
+
+            if (section2_Image != null)
+                consultant.Section2_Image = await SaveFileAsync(section2_Image, Section2ImageFolder);
 
             if (section3_Image != null)
-                consultant.Section3_Image = await SaveFileAsync(section3_Image, "section3_Image");
+                consultant.Section3_Image = await SaveFileAsync(section3_Image, Section3ImageFolder);
 
             // Update text fields (only if new value provided)
             consultant.FullName = dto.FullName ?? consultant.FullName;
@@ -150,7 +162,13 @@ namespace ConsultantDashboard.Services.Implement
 
         private async Task<string> SaveFileAsync(IFormFile file, string folderName)
         {
-            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", folderName);
+            // Validate file size (example limit: 10MB)
+            if (file.Length > 10 * 1024 * 1024)
+            {
+                throw new InvalidOperationException("File size exceeds the limit of 10MB.");
+            }
+
+            var uploadsPath = Path.Combine(_env.WebRootPath, folderName);
 
             if (!Directory.Exists(uploadsPath))
                 Directory.CreateDirectory(uploadsPath);
@@ -160,10 +178,12 @@ namespace ConsultantDashboard.Services.Implement
             var fileName = $"{safeFileName}_{DateTime.UtcNow.Ticks}{extension}";
             var fullPath = Path.Combine(uploadsPath, fileName);
 
-            using var stream = new FileStream(fullPath, FileMode.Create);
-            await file.CopyToAsync(stream);
+            // Save the file with proper cleanup
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
 
-            // Save as relative path (useful for accessing via web later)
             return $"/{folderName}/{fileName}";
         }
     }

@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ConsultantDashboard.Services.IImplement;
 using ConsultantDashboard.Services.Implement;
+using ConsultantDashboard.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,17 @@ builder.Services.AddScoped<ICustomerAppointmentService, CustomerAppointmentServi
 builder.Services.AddScoped<IConsultationPlanService, ConsultationPlanService>();
 builder.Services.AddScoped<IConsultantProfileService, ConsultantProfileService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IConsultantProfileService, ConsultantProfileService>();
+builder.Services.AddScoped<IPatientAuthService, PatientAuthService>();
+builder.Services.AddScoped<IStatService, StatService>();
+builder.Services.AddScoped<IFaqService, FaqService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
+builder.Services.AddScoped<ISection5Service, Section5Service>();
+builder.Services.AddScoped<IAppointmentRequestService, AppointmentRequestService>();
+
+
+
+
 
 
 

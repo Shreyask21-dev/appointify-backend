@@ -38,7 +38,6 @@ namespace ConsultantDashboard.Core.Models
         public decimal Amount { get; set; }
 
         public string? PaymentId { get; set; }
-        public string? PaymentStatus { get; set; }
         public string? AppointmentStatus { get; set; }
         public string? OrderId { get; set; }
 
@@ -48,10 +47,5 @@ namespace ConsultantDashboard.Core.Models
 
 
 
-public class PaymentResponse
-    {
-        public string? OrderId { get; set; }
-        public string? PaymentId { get; set; }
-        public string? AppointmentId { get; set; }
-    }
+
 }

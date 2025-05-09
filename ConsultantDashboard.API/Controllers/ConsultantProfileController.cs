@@ -25,16 +25,16 @@ namespace LoginAPI.Controllers
         }
 
         [HttpPost("addConsultantProfile")]
-        public async Task<IActionResult> AddConsultantProfile([FromForm] AddConsultantProfileDTOs dto, IFormFile? profileImage = null, IFormFile? backgroundImage = null)
+        public async Task<IActionResult> AddConsultantProfile([FromForm] AddConsultantProfileDTOs dto, IFormFile? profileImage = null, IFormFile? backgroundImage = null, IFormFile? section3_Image = null, IFormFile? section2_Image = null)
         {
-            var (message, profile) = await _consultantProfileService.AddConsultantProfileAsync(dto, profileImage, backgroundImage);
+            var (message, profile) = await _consultantProfileService.AddConsultantProfileAsync(dto, profileImage, backgroundImage,section3_Image,section2_Image);
             return Ok(new { message, result = profile });
         }
 
         [HttpPatch("updateConsultantProfile")]
-        public async Task<IActionResult> UpdateConsultantProfile([FromForm] UpdateConsultantProfileDTOs dto, IFormFile? profileImage = null, IFormFile? backgroundImage = null, IFormFile? section3_Image = null)
+        public async Task<IActionResult> UpdateConsultantProfile([FromForm] UpdateConsultantProfileDTOs dto, IFormFile? profileImage = null, IFormFile? backgroundImage = null, IFormFile? section3_Image = null, IFormFile? section2_Image = null)
         {
-            var (message, profile) = await _consultantProfileService.UpdateConsultantProfileAsync(dto, profileImage, backgroundImage, section3_Image);
+            var (message, profile) = await _consultantProfileService.UpdateConsultantProfileAsync(dto, profileImage, backgroundImage,section2_Image, section3_Image);
             return Ok(new { message, result = profile });
         }
     }

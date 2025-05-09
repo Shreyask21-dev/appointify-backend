@@ -28,7 +28,6 @@ namespace ConsultantDashboard.Services.Implement
                 Age = (int)p.Age,
                 Gender = p.Gender,
                 TotalAppointments = p.TotalAppointments,
-                PaymentStatus = p.PaymentStatus,
                 CreatedDate = p.CreatedDate
             });
         }
@@ -45,7 +44,6 @@ namespace ConsultantDashboard.Services.Implement
                 Gender = dto.Gender,
                 CreatedDate = DateTime.UtcNow,
                 TotalAppointments = 0,
-                PaymentStatus = "Unpaid"
             };
 
             await _context.PatientProfiles.AddAsync(profile);
@@ -73,7 +71,6 @@ namespace ConsultantDashboard.Services.Implement
                 profile.Age = updatedData.Age;
                 profile.Gender = updatedData.Gender;
                 profile.TotalAppointments = updatedData.TotalAppointments;
-                profile.PaymentStatus = updatedData.PaymentStatus;
             }
 
             await _context.SaveChangesAsync();

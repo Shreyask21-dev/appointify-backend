@@ -35,8 +35,6 @@ namespace ConsultantDashboard.Core.Models
         public string? OrderId { get; set; }
         public string? AppointmentId { get; set; }
 
-        [Required]
-        public PaymentStatus PaymentStatus { get; set; }
 
         [Required]
         public DateTime AppointmentDateTime { get; set; }
@@ -59,12 +57,7 @@ namespace ConsultantDashboard.Core.Models
 
 
     // Enum for Payment Status
-    public enum PaymentStatus
-    {
-        Captured, //0
-        Failed, //1
-        Refunded //2
-    }
+  
 
     // Enum for Appointment Status
     public enum AppointmentStatus
