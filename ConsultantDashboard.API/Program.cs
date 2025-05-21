@@ -32,7 +32,11 @@ builder.Services.AddScoped<IStatService, StatService>();
 builder.Services.AddScoped<IFaqService, FaqService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<ISection5Service, Section5Service>();
+<<<<<<< HEAD
 builder.Services.AddScoped<IAppointmentRequestService, AppointmentRequestService>();
+=======
+builder.Services.AddScoped<IWorkSessionService, WorkSessionService>();
+>>>>>>> 11cf769 (time slots pending)
 
 
 

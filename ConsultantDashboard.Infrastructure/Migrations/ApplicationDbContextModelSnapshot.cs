@@ -535,6 +535,25 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                     b.ToTable("Stats");
                 });
 
+            modelBuilder.Entity("ConsultantDashboard.Core.Models.WorkSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("WorkEndTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("WorkStartTime")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("WorkSessions");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")

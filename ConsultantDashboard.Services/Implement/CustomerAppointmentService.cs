@@ -81,7 +81,76 @@ namespace ConsultantDashboard.Services.Implement
             }
         }
 
+<<<<<<< HEAD
       
+=======
+        private string GenerateBase64Receipt(CustomerAppointments appointment)
+        {
+            // For demonstration, create a simple PDF content (in real case, use a PDF library)
+            var pdfContent = $"Receipt for Appointment: {appointment.Id}\n" +
+                             $"Name: {appointment.FirstName} {appointment.LastName}\n" +
+                             $"Amount Paid: ₹{appointment.Amount}\n" +
+                             $"Date: {appointment.AppointmentDate} {appointment.AppointmentTime}\n" +
+                             $"Payment ID: {appointment.PaymentId}\n";
+
+            // Convert to byte array (simulate PDF)
+            var pdfBytes = Encoding.UTF8.GetBytes(pdfContent);
+
+            return Convert.ToBase64String(pdfBytes);
+        }
+
+        public async Task<object> VerifyPaymentAsync(PaymentResponse response)
+        {
+            // Razorpay secret key (should come from configuration)
+            string secret = _secret;
+
+            // Data to sign
+            string data = $"{response.OrderId}|{response.PaymentId}";
+
+            // Create HMAC SHA256 hash of the data using secret
+            using var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(secret));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+            string generatedSignature = BitConverter.ToString(hash).Replace("-", "").ToLower();
+
+            if (generatedSignature != response.Signature?.ToLower())
+            {
+                throw new Exception("Payment verification failed due to invalid signature.");
+            }
+
+            // Fetch the appointment from DB
+            var appointment = await _context.CustomerAppointments
+                .FirstOrDefaultAsync(a => a.Id == Guid.Parse(response.AppointmentId));
+
+            if (appointment == null)
+                throw new KeyNotFoundException("Customer Appointment not found.");
+
+            // Update appointment payment info
+            appointment.PaymentId = response.PaymentId ?? "None";
+            appointment.OrderId = response.OrderId;
+            appointment.PaymentStatus = PaymentStatus.Paid;
+            appointment.PaymentMethod = "GPay/Online";
+            appointment.AppointmentStatus = AppointmentStatus.Scheduled;
+            appointment.UpdatedDate = DateTime.UtcNow;
+
+            _context.CustomerAppointments.Update(appointment);
+            await _context.SaveChangesAsync();
+
+            // Generate receipt base64 (implement accordingly)
+            string base64Receipt = GenerateBase64Receipt(appointment);
+
+            return new
+            {
+                Success = true,
+                Message = base64Receipt != null
+                    ? "Payment verified and receipt generated."
+                    : "Payment verified, but receipt generation failed.",
+                response.PaymentId,
+                PaymentStatus = "Paid",
+                Receipt = base64Receipt,
+            };
+        }
+
+>>>>>>> 11cf769 (time slots pending)
         public async Task<IEnumerable<object>> GetAllAppointmentsAsync()
         {
             return await _context.ConsultantAppointments

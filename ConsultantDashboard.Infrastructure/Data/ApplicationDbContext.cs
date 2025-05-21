@@ -1,4 +1,5 @@
-﻿using ConsultantDashboard.Core.Models;
+﻿using System.Reflection.Emit;
+using ConsultantDashboard.Core.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
@@ -18,6 +19,14 @@ namespace ConsultantDashboard.Infrastructure.Data
         public DbSet<ConsultantAppointment> ConsultantAppointments { get; set; }
         public DbSet<ConsultationPlan> ConsultationPlans { get; set; }
         public DbSet<Stat> Stats { get; set; }
+<<<<<<< HEAD
+=======
+        public DbSet<Section5Content> Section5Contents { get; set; }
+        public DbSet<Faq> Faqs { get; set; }
+        public DbSet<Location> Locations { get; set; }
+        public DbSet<WorkSession> WorkSessions { get; set; }
+
+>>>>>>> 11cf769 (time slots pending)
 
         public DbSet<Section5Content> Section5Contents { get; set; }
 
@@ -33,9 +42,17 @@ namespace ConsultantDashboard.Infrastructure.Data
            .HasPrecision(18, 2);
             base.OnModelCreating(builder);
 
+<<<<<<< HEAD
             builder.Entity<ConsultantAppointment>()
         .Property(c => c.Amount)
         .HasColumnType("decimal(18,2)");
+=======
+           
+            // Configuring the Amount property precision
+            builder.Entity<CustomerAppointments>()
+                .Property(a => a.Amount)
+                .HasPrecision(18, 2);
+>>>>>>> 11cf769 (time slots pending)
 
             builder.Entity<ConsultantProfile>()
                .Property(x => x.Id)
