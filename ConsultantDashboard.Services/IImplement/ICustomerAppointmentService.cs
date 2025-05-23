@@ -6,7 +6,6 @@ namespace ConsultantDashboard.Services.IImplement
     {
         Task<object> CreateAppointmentAsync(CustomerAppointments model);
         Task<IEnumerable<object>> GetAllAppointmentsAsync();
-        Task<IEnumerable<object>> GetAllConsultantAppointmentsAsync();
         Task UpdateAppointmentAsync(Guid id, CustomerAppointments updatedAppointment);
         Task DeleteAppointmentAsync(Guid id);
     }

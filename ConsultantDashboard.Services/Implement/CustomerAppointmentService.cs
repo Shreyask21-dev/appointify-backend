@@ -1,4 +1,5 @@
-﻿using ConsultantDashboard.Core.Models;
+﻿using System.Text;
+using ConsultantDashboard.Core.Models;
 using ConsultantDashboard.Infrastructure.Data;
 using ConsultantDashboard.Services.IImplement;
 using Microsoft.EntityFrameworkCore;
@@ -28,31 +29,32 @@ namespace ConsultantDashboard.Services.Implement
                 model.Id = Guid.NewGuid();
                 model.CreatedDate = DateTime.UtcNow;
                 model.UpdatedDate = DateTime.UtcNow;
-                model.AppointmentStatus = "Pending";
+                model.AppointmentStatus = AppointmentStatus.Pending;
 
                 await _context.CustomerAppointments.AddAsync(model);
                 await _context.SaveChangesAsync();
 
-                var consultantAppointment = new ConsultantAppointment
+                var customerAppointment = new CustomerAppointments
                 {
-                    AppointmentId = model.Id.ToString(),
-                    Name = model.Name,
+                    Id = model.Id,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
                     Email = model.Email,
                     PhoneNumber = model.PhoneNumber,
-                    Plan = model.Description,
+                    Details = model.Details,
+                    Plan = model.Plan,
                     Amount = model.Amount,
                     PaymentId = model.PaymentId,
                     OrderId = model.OrderId,
-                    AppointmentDateTime = model.Time,
+                    AppointmentTime = model.AppointmentTime,
                     Duration = model.Duration,
                     AppointmentStatus = AppointmentStatus.Scheduled,
                     CreatedDate = DateTime.UtcNow,
                     UpdatedDate = DateTime.UtcNow,
-                    Action = AppointmentAction.Pending
                 };
 
-                await _context.ConsultantAppointments.AddAsync(consultantAppointment);
-                await _context.SaveChangesAsync();
+                await _context.CustomerAppointments.AddAsync(customerAppointment);
+        
 
                 await transaction.CommitAsync();
 
@@ -81,9 +83,6 @@ namespace ConsultantDashboard.Services.Implement
             }
         }
 
-<<<<<<< HEAD
-      
-=======
         private string GenerateBase64Receipt(CustomerAppointments appointment)
         {
             // For demonstration, create a simple PDF content (in real case, use a PDF library)
@@ -150,95 +149,70 @@ namespace ConsultantDashboard.Services.Implement
             };
         }
 
->>>>>>> 11cf769 (time slots pending)
         public async Task<IEnumerable<object>> GetAllAppointmentsAsync()
         {
-            return await _context.ConsultantAppointments
+            return await _context.CustomerAppointments
                 .Select(a => new
                 {
                     a.Id,
-                    a.Name,
-                    a.AppointmentDateTime,
+                    a.FirstName,
+                    a.LastName,
+                    a.AppointmentTime,
+                    a.AppointmentDate,
                     a.Email,
+                    a.Details,
                     a.PhoneNumber,
                     a.Plan,
                     a.Amount,
                     a.PaymentId,
+                    a.PaymentStatus,
+                    a.PaymentMethod,
                     a.AppointmentStatus,
-                    a.AppointmentId,
-                    a.Action,
                     a.Duration,
                     a.CreatedDate,
                     a.UpdatedDate
                 }).ToListAsync();
         }
 
-        public async Task<IEnumerable<object>> GetAllConsultantAppointmentsAsync()
-        {
-            return await _context.ConsultantAppointments
-                .Select(a => new
-                {
-                    a.Id,
-                    a.Name,
-                    a.Email,
-                    a.PhoneNumber,
-                    a.Plan,
-                    a.Amount,
-                    a.Duration,
-                    a.PaymentId,
-                    a.AppointmentStatus,
-                    a.AppointmentId
-                }).ToListAsync();
-        }
-
+    
         public async Task UpdateAppointmentAsync(Guid id, CustomerAppointments updatedAppointment)
         {
             var existingAppointment = await _context.CustomerAppointments.FirstOrDefaultAsync(a => a.Id == id);
             if (existingAppointment == null)
                 throw new KeyNotFoundException("Appointment not found.");
 
-            existingAppointment.Name = updatedAppointment.Name;
+            existingAppointment.FirstName = updatedAppointment.FirstName;
+            existingAppointment.LastName = updatedAppointment.LastName;
             existingAppointment.Email = updatedAppointment.Email;
             existingAppointment.Plan = updatedAppointment.Plan;
             existingAppointment.PhoneNumber = updatedAppointment.PhoneNumber;
             existingAppointment.Amount = updatedAppointment.Amount;
-            existingAppointment.Time = updatedAppointment.Time;
+            existingAppointment.Details = updatedAppointment.Details;
+            existingAppointment.PaymentId = updatedAppointment.PaymentId;
+            existingAppointment.AppointmentTime = updatedAppointment.AppointmentTime;
+            existingAppointment.AppointmentDate = updatedAppointment.AppointmentDate;
+            existingAppointment.PaymentMethod = updatedAppointment.PaymentMethod;
+            existingAppointment.AppointmentStatus = updatedAppointment.AppointmentStatus;
             existingAppointment.Duration = updatedAppointment.Duration;
             existingAppointment.UpdatedDate = DateTime.UtcNow;
 
             _context.CustomerAppointments.Update(existingAppointment);
 
-            var consultantAppointment = await _context.ConsultantAppointments
-                .FirstOrDefaultAsync(ca => ca.AppointmentId == id.ToString());
-
-            if (consultantAppointment != null)
-            {
-                consultantAppointment.Name = updatedAppointment.Name;
-                consultantAppointment.Email = updatedAppointment.Email;
-                consultantAppointment.PhoneNumber = updatedAppointment.PhoneNumber;
-                consultantAppointment.Plan = updatedAppointment.Plan;
-                consultantAppointment.Amount = updatedAppointment.Amount;
-                consultantAppointment.Duration = updatedAppointment.Duration;
-                consultantAppointment.AppointmentDateTime = updatedAppointment.Time;
-                consultantAppointment.UpdatedDate = DateTime.UtcNow;
-
-                _context.ConsultantAppointments.Update(consultantAppointment);
+            await _context.SaveChangesAsync();
+          
             }
 
-            await _context.SaveChangesAsync();
-        }
+        
 
         public async Task DeleteAppointmentAsync(Guid id)
         {
             var customerAppointment = await _context.CustomerAppointments.FirstOrDefaultAsync(a => a.Id == id);
-            var consultantAppointment = await _context.ConsultantAppointments.FirstOrDefaultAsync(ca => ca.AppointmentId == id.ToString());
 
             if (customerAppointment == null)
                 throw new KeyNotFoundException("Customer appointment not found.");
 
             _context.CustomerAppointments.Remove(customerAppointment);
-            if (consultantAppointment != null)
-                _context.ConsultantAppointments.Remove(consultantAppointment);
+           
 
             await _context.SaveChangesAsync();
         }

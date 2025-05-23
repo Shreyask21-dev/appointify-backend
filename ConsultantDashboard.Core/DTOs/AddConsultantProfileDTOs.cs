@@ -7,7 +7,7 @@ namespace ConsultantDashboard.Core.DTOs
      
             public string? FullName { get; set; }
             public string? Role { get; set; }
-            public string? Location { get; set; }
+            public string? LocationURL { get; set; }
             public DateTime? JoinDate { get; set; }
             public string? Countries { get; set; }
             public string? Languages { get; set; }

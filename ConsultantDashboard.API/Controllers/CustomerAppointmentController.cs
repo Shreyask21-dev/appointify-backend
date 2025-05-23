@@ -31,12 +31,6 @@ namespace ConsultantDashboard.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("GetAllConsultantAppointments")]
-        public async Task<IActionResult> GetAllConsultantAppointments()
-        {
-            var result = await _appointmentService.GetAllConsultantAppointmentsAsync();
-            return Ok(result);
-        }
 
         [HttpPut("UpdateAppointment/{id}")]
         public async Task<IActionResult> UpdateAppointment(Guid id, [FromBody] CustomerAppointments updatedAppointment)
