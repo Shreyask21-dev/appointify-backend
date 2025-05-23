@@ -34,7 +34,12 @@ namespace ConsultantDashboard.Services.Implement
             return await _context.ConsultantProfile.ToListAsync();
         }
 
-        public async Task<(string message, ConsultantProfile profile)> AddConsultantProfileAsync(AddConsultantProfileDTOs dto, IFormFile? profileImage, IFormFile? backgroundImage, IFormFile? section2_Image, IFormFile? section3_Image)
+        public async Task<(string message, ConsultantProfile profile)> AddConsultantProfileAsync(
+            AddConsultantProfileDTOs dto,
+            IFormFile? profileImage,
+            IFormFile? backgroundImage,
+            IFormFile? section2_Image,
+            IFormFile? section3_Image)
         {
             if (dto == null)
                 throw new ArgumentException("Invalid data submitted.");
@@ -69,12 +74,17 @@ namespace ConsultantDashboard.Services.Implement
                 Section3_Description = dto.Section3_Description
             };
 
-            // ✅ Save uploaded images if available
             if (profileImage != null)
                 newProfile.ProfileImage = await SaveFileAsync(profileImage, ProfileImageFolder);
 
             if (backgroundImage != null)
                 newProfile.BackgroundImage = await SaveFileAsync(backgroundImage, BackgroundImageFolder);
+
+            if (section2_Image != null)
+                newProfile.Section2_Image = await SaveFileAsync(section2_Image, Section2ImageFolder);
+
+            if (section3_Image != null)
+                newProfile.Section3_Image = await SaveFileAsync(section3_Image, Section3ImageFolder);
 
             await _context.ConsultantProfile.AddAsync(newProfile);
             await _context.SaveChangesAsync();
@@ -82,16 +92,20 @@ namespace ConsultantDashboard.Services.Implement
             return ("Consultant Profile Added Successfully!", newProfile);
         }
 
-        public async Task<(string message, ConsultantProfile profile)> UpdateConsultantProfileAsync(UpdateConsultantProfileDTOs dto, IFormFile? profileImage, IFormFile? backgroundImage, IFormFile? section2_Image, IFormFile? section3_Image)
+        public async Task<(string message, ConsultantProfile profile)> UpdateConsultantProfileAsync(
+            UpdateConsultantProfileDTOs dto,
+            IFormFile? profileImage,
+            IFormFile? backgroundImage,
+            IFormFile? section2_Image,
+            IFormFile? section3_Image)
         {
             if (dto == null)
-                throw new ArgumentException("Invalid Data");
+                throw new ArgumentException("Invalid data.");
 
             var consultant = await _context.ConsultantProfile.FirstOrDefaultAsync();
 
             if (consultant == null)
             {
-                // If no existing profile, create a new one
                 return await AddConsultantProfileAsync(new AddConsultantProfileDTOs
                 {
                     FullName = dto.FullName,
@@ -115,10 +129,9 @@ namespace ConsultantDashboard.Services.Implement
                     Description = dto.Description,
                     Section3_Tagline = dto.Section3_Tagline,
                     Section3_Description = dto.Section3_Description
-                }, profileImage, backgroundImage, section3_Image, section2_Image);
+                }, profileImage, backgroundImage, section2_Image, section3_Image);
             }
 
-            // ✅ Save uploaded images if available
             if (profileImage != null)
                 consultant.ProfileImage = await SaveFileAsync(profileImage, ProfileImageFolder);
 
@@ -131,7 +144,6 @@ namespace ConsultantDashboard.Services.Implement
             if (section3_Image != null)
                 consultant.Section3_Image = await SaveFileAsync(section3_Image, Section3ImageFolder);
 
-            // Update text fields (only if new value provided)
             consultant.FullName = dto.FullName;
             consultant.Role = dto.Role;
             consultant.LocationURL = dto.LocationURL;
@@ -162,14 +174,10 @@ namespace ConsultantDashboard.Services.Implement
 
         private async Task<string> SaveFileAsync(IFormFile file, string folderName)
         {
-            // Validate file size (example limit: 10MB)
             if (file.Length > 10 * 1024 * 1024)
-            {
                 throw new InvalidOperationException("File size exceeds the limit of 10MB.");
-            }
 
             var uploadsPath = Path.Combine(_env.WebRootPath, folderName);
-
             if (!Directory.Exists(uploadsPath))
                 Directory.CreateDirectory(uploadsPath);
 
@@ -178,7 +186,6 @@ namespace ConsultantDashboard.Services.Implement
             var fileName = $"{safeFileName}_{DateTime.UtcNow.Ticks}{extension}";
             var fullPath = Path.Combine(uploadsPath, fileName);
 
-            // Save the file with proper cleanup
             using (var stream = new FileStream(fullPath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
