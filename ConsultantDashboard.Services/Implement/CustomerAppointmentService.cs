@@ -100,7 +100,6 @@ namespace ConsultantDashboard.Services.Implement
                 return new
                 {
                     OrderId = appointment.OrderId,
-                    AppointmentId = appointment.Id.ToString(),
                     appointment.Amount
                 };
             }
@@ -138,7 +137,7 @@ namespace ConsultantDashboard.Services.Implement
             }
 
             var appointment = await _context.CustomerAppointments
-                .FirstOrDefaultAsync(a => a.Id == Guid.Parse(response.OrderId));
+                  .FirstOrDefaultAsync(a => a.OrderId == response.OrderId);
 
             if (appointment == null)
                 throw new KeyNotFoundException("Customer Appointment not found.");
