@@ -32,6 +32,8 @@ builder.Services.AddScoped<IFaqService, FaqService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<ISection5Service, Section5Service>();
 builder.Services.AddScoped<IWorkSessionService, WorkSessionService>();
+builder.Services.AddHttpContextAccessor(); // For .NET 6+
+
 
 
 

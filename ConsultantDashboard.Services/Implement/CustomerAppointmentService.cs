@@ -5,6 +5,9 @@ using ConsultantDashboard.Services.IImplement;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Razorpay.Api;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ConsultantDashboard.Services.Implement
 {
@@ -13,12 +16,14 @@ namespace ConsultantDashboard.Services.Implement
         private readonly ApplicationDbContext _context;
         private readonly string _key;
         private readonly string _secret;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public CustomerAppointmentService(ApplicationDbContext context, IConfiguration configuration)
+        public CustomerAppointmentService(ApplicationDbContext context, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _key = configuration["Razorpay:Key"];
             _secret = configuration["Razorpay:Secret"];
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<object> CreateAppointmentAsync(CustomerAppointments model)
@@ -26,7 +31,16 @@ namespace ConsultantDashboard.Services.Implement
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // Get UserId from authenticated user
+                var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                {
+                    throw new UnauthorizedAccessException("User is not authenticated or invalid UserId.");
+                }
+
                 model.Id = Guid.NewGuid();
+                model.UserId = userId;
                 model.CreatedDate = DateTime.UtcNow;
                 model.UpdatedDate = DateTime.UtcNow;
                 model.AppointmentStatus = AppointmentStatus.Pending;
@@ -34,34 +48,11 @@ namespace ConsultantDashboard.Services.Implement
                 await _context.CustomerAppointments.AddAsync(model);
                 await _context.SaveChangesAsync();
 
-                var customerAppointment = new CustomerAppointments
-                {
-                    Id = model.Id,
-                    FirstName = model.FirstName,
-                    LastName = model.LastName,
-                    Email = model.Email,
-                    PhoneNumber = model.PhoneNumber,
-                    Details = model.Details,
-                    Plan = model.Plan,
-                    Amount = model.Amount,
-                    PaymentId = model.PaymentId,
-                    OrderId = model.OrderId,
-                    AppointmentTime = model.AppointmentTime,
-                    Duration = model.Duration,
-                    AppointmentStatus = AppointmentStatus.Scheduled,
-                    CreatedDate = DateTime.UtcNow,
-                    UpdatedDate = DateTime.UtcNow,
-                };
-
-                await _context.CustomerAppointments.AddAsync(customerAppointment);
-        
-
-                await transaction.CommitAsync();
-
+                // Create Razorpay order
                 RazorpayClient client = new RazorpayClient(_key, _secret);
                 Dictionary<string, object> options = new()
                 {
-                    { "amount", model.Amount * 100 },  // Razorpay expects amount in paise
+                    { "amount", model.Amount * 100 },
                     { "currency", "INR" },
                     { "receipt", model.Id.ToString() },
                     { "payment_capture", 1 }
@@ -69,9 +60,15 @@ namespace ConsultantDashboard.Services.Implement
 
                 Order order = client.Order.Create(options);
 
+                // Save Razorpay OrderId
+                model.OrderId = order["id"].ToString();
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
                 return new
                 {
-                    OrderId = order["id"].ToString(),
+                    OrderId = model.OrderId,
                     AppointmentId = model.Id.ToString(),
                     model.Amount
                 };
@@ -83,58 +80,40 @@ namespace ConsultantDashboard.Services.Implement
             }
         }
 
-        private string GenerateBase64Receipt(CustomerAppointments appointment)
-        {
-            // For demonstration, create a simple PDF content (in real case, use a PDF library)
-            var pdfContent = $"Receipt for Appointment: {appointment.Id}\n" +
-                             $"Name: {appointment.FirstName} {appointment.LastName}\n" +
-                             $"Amount Paid: ₹{appointment.Amount}\n" +
-                             $"Date: {appointment.AppointmentDate} {appointment.AppointmentTime}\n" +
-                             $"Payment ID: {appointment.PaymentId}\n";
-
-            // Convert to byte array (simulate PDF)
-            var pdfBytes = Encoding.UTF8.GetBytes(pdfContent);
-
-            return Convert.ToBase64String(pdfBytes);
-        }
-
         public async Task<object> VerifyPaymentAsync(PaymentResponse response)
         {
-            // Razorpay secret key (should come from configuration)
-            string secret = _secret;
+            try
+            {
+                var attributes = new Dictionary<string, string>
+                {
+                    { "razorpay_order_id", response.OrderId },
+                    { "razorpay_payment_id", response.PaymentId },
+                    { "razorpay_signature", response.Signature }
+                };
 
-            // Data to sign
-            string data = $"{response.OrderId}|{response.PaymentId}";
-
-            // Create HMAC SHA256 hash of the data using secret
-            using var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(secret));
-            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
-            string generatedSignature = BitConverter.ToString(hash).Replace("-", "").ToLower();
-
-            if (generatedSignature != response.Signature?.ToLower())
+                Utils.verifyPaymentSignature(attributes);
+            }
+            catch
             {
                 throw new Exception("Payment verification failed due to invalid signature.");
             }
 
-            // Fetch the appointment from DB
             var appointment = await _context.CustomerAppointments
                 .FirstOrDefaultAsync(a => a.Id == Guid.Parse(response.AppointmentId));
 
             if (appointment == null)
                 throw new KeyNotFoundException("Customer Appointment not found.");
 
-            // Update appointment payment info
             appointment.PaymentId = response.PaymentId ?? "None";
             appointment.OrderId = response.OrderId;
             appointment.PaymentStatus = PaymentStatus.Paid;
-            appointment.PaymentMethod = "GPay/Online";
+            appointment.PaymentMethod = "Online";
             appointment.AppointmentStatus = AppointmentStatus.Scheduled;
             appointment.UpdatedDate = DateTime.UtcNow;
 
             _context.CustomerAppointments.Update(appointment);
             await _context.SaveChangesAsync();
 
-            // Generate receipt base64 (implement accordingly)
             string base64Receipt = GenerateBase64Receipt(appointment);
 
             return new
@@ -145,36 +124,23 @@ namespace ConsultantDashboard.Services.Implement
                     : "Payment verified, but receipt generation failed.",
                 response.PaymentId,
                 PaymentStatus = "Paid",
-                Receipt = base64Receipt,
+                Receipt = base64Receipt
             };
         }
 
-        public async Task<IEnumerable<object>> GetAllAppointmentsAsync()
+        private string GenerateBase64Receipt(CustomerAppointments appointment)
         {
-            return await _context.CustomerAppointments
-                .Select(a => new
-                {
-                    a.Id,
-                    a.FirstName,
-                    a.LastName,
-                    a.AppointmentTime,
-                    a.AppointmentDate,
-                    a.Email,
-                    a.Details,
-                    a.PhoneNumber,
-                    a.Plan,
-                    a.Amount,
-                    a.PaymentId,
-                    a.PaymentStatus,
-                    a.PaymentMethod,
-                    a.AppointmentStatus,
-                    a.Duration,
-                    a.CreatedDate,
-                    a.UpdatedDate
-                }).ToListAsync();
+            var pdfContent = $"Receipt for Appointment: {appointment.Id}\n" +
+                             $"Name: {appointment.FirstName} {appointment.LastName}\n" +
+                             $"Amount Paid: ₹{appointment.Amount}\n" +
+                             $"Date: {appointment.AppointmentDate:yyyy-MM-dd} {appointment.AppointmentTime}\n" +
+                             $"Payment ID: {appointment.PaymentId}\n";
+
+            var pdfBytes = Encoding.UTF8.GetBytes(pdfContent);
+            return Convert.ToBase64String(pdfBytes);
         }
 
-    
+     
         public async Task UpdateAppointmentAsync(Guid id, CustomerAppointments updatedAppointment)
         {
             var existingAppointment = await _context.CustomerAppointments.FirstOrDefaultAsync(a => a.Id == id);
@@ -197,12 +163,8 @@ namespace ConsultantDashboard.Services.Implement
             existingAppointment.UpdatedDate = DateTime.UtcNow;
 
             _context.CustomerAppointments.Update(existingAppointment);
-
             await _context.SaveChangesAsync();
-          
-            }
-
-        
+        }
 
         public async Task DeleteAppointmentAsync(Guid id)
         {
@@ -212,9 +174,60 @@ namespace ConsultantDashboard.Services.Implement
                 throw new KeyNotFoundException("Customer appointment not found.");
 
             _context.CustomerAppointments.Remove(customerAppointment);
-           
-
             await _context.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<object>> GetAllAppointmentsAsync()
+        {
+            try
+            {
+                var list = await _context.CustomerAppointments.ToListAsync();
+                var result = list.Select(a => new
+                {
+                    a.Id,
+                    a.FirstName,
+                    a.LastName,
+                    a.AppointmentTime,
+                    a.AppointmentDate,
+                    a.Email,
+                    a.Details,
+                    a.PhoneNumber,
+                    a.Plan,
+                    a.Amount,
+                    a.PaymentId,
+                    a.PaymentStatus,
+                    a.PaymentMethod,
+                    a.AppointmentStatus,
+                    a.Duration,
+                    a.CreatedDate,
+                    a.UpdatedDate
+                }).ToList();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in GetAllAppointmentsAsync: " + ex);
+                throw;
+            }
+        }
+
+
+        public async Task<IEnumerable<object>> GetBookedSlotsAsync(DateTime date, string plan)
+        {
+            var dateStr = date.ToString("yyyy-MM-dd");
+
+            var slots = await _context.CustomerAppointments
+                .Where(a => a.AppointmentDate == dateStr && a.Plan == plan && a.AppointmentStatus != AppointmentStatus.Cancelled)
+                .Select(a => new
+                {
+                    Time = a.AppointmentTime,
+                    Status = a.AppointmentStatus.ToString()
+                })
+                .ToListAsync();
+
+            return slots;
+        }
+
+
     }
 }

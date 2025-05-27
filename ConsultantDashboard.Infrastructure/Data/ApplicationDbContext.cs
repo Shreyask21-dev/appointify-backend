@@ -3,6 +3,7 @@ using ConsultantDashboard.Core.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ConsultantDashboard.Infrastructure.Data
 {
@@ -46,9 +47,25 @@ namespace ConsultantDashboard.Infrastructure.Data
                .Property(x => x.Id)
                .HasDefaultValueSql("NEWID()"); // This generates GUID
 
-          // ✅ Store as string instead of int
+            // ✅ Store as string instead of int
+            var appointmentStatusConverter = new ValueConverter<AppointmentStatus, string>(
+             v => v.ToString(),                  // enum to string (when saving)
+             v => (AppointmentStatus)Enum.Parse(typeof(AppointmentStatus), v)  // string to enum (when reading)
+         );
 
-    
+            var paymentStatusConverter = new ValueConverter<PaymentStatus, int>(
+                v => (int)v,                       // enum to int (saving)
+                v => (PaymentStatus)v              // int to enum (reading)
+            );
+
+            builder.Entity<CustomerAppointments>()
+                .Property(e => e.AppointmentStatus)
+                .HasConversion(appointmentStatusConverter);
+
+            builder.Entity<CustomerAppointments>()
+                .Property(e => e.PaymentStatus)
+                .HasConversion(paymentStatusConverter);
+
 
             builder.Entity<ApplicationUser>().Ignore(u => u.TwoFactorEnabled);
             builder.Entity<ApplicationUser>().Ignore(u => u.LockoutEnd);

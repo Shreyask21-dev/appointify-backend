@@ -6,11 +6,11 @@ namespace ConsultantDashboard.Core.Models
 {
     public class CustomerAppointments
     {
-        [Required]
-        public Guid Id { get; set; }
+
+        public Guid Id { get; set; } = Guid.NewGuid();
 
 
-        [Required]
+
         public Guid UserId { get; set; }
 
         [Required]
@@ -47,16 +47,17 @@ namespace ConsultantDashboard.Core.Models
         public string? PaymentId { get; set; }
         public string? OrderId { get; set; }
 
-        public AppointmentStatus AppointmentStatus { get; set; }
+        public AppointmentStatus AppointmentStatus { get; set; } = AppointmentStatus.Pending;
 
-        public PaymentStatus PaymentStatus { get; set; }
+        public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
 
-        public string PaymentMethod { get; set; }
+        public string PaymentMethod { get; set; } = "Pending";
 
 
 
-        public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
+        public DateTime UpdatedDate { get; set; } = DateTime.UtcNow;
     }
 
 

@@ -8,5 +8,8 @@ namespace ConsultantDashboard.Services.IImplement
         Task<IEnumerable<object>> GetAllAppointmentsAsync();
         Task UpdateAppointmentAsync(Guid id, CustomerAppointments updatedAppointment);
         Task DeleteAppointmentAsync(Guid id);
+        Task<IEnumerable<object>> GetBookedSlotsAsync(DateTime date, string plan);
+
+
     }
 }

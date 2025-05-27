@@ -1,5 +1,6 @@
 ﻿using ConsultantDashboard.Core.Models;
 using ConsultantDashboard.Services.IImplement;
+using ConsultantDashboard.Services.Implement;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ConsultantDashboard.API.Controllers
@@ -45,5 +46,21 @@ namespace ConsultantDashboard.API.Controllers
             await _appointmentService.DeleteAppointmentAsync(id);
             return Ok("Appointment deleted successfully.");
         }
+
+        [HttpGet("GetBookedSlots")]
+        public async Task<IActionResult> GetBookedSlots([FromQuery] DateTime date, [FromQuery] string plan)
+        {
+            try
+            {
+                var result = await _appointmentService.GetBookedSlotsAsync(date, plan);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+
     }
 }

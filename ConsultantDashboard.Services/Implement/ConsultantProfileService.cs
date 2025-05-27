@@ -93,11 +93,11 @@ namespace ConsultantDashboard.Services.Implement
         }
 
         public async Task<(string message, ConsultantProfile profile)> UpdateConsultantProfileAsync(
-            UpdateConsultantProfileDTOs dto,
-            IFormFile? profileImage,
-            IFormFile? backgroundImage,
-            IFormFile? section2_Image,
-            IFormFile? section3_Image)
+         UpdateConsultantProfileDTOs dto,
+         IFormFile? profileImage,
+         IFormFile? backgroundImage,
+         IFormFile? section2_Image,
+         IFormFile? section3_Image)
         {
             if (dto == null)
                 throw new ArgumentException("Invalid data.");
@@ -132,6 +132,7 @@ namespace ConsultantDashboard.Services.Implement
                 }, profileImage, backgroundImage, section2_Image, section3_Image);
             }
 
+            // Image updates
             if (profileImage != null)
                 consultant.ProfileImage = await SaveFileAsync(profileImage, ProfileImageFolder);
 
@@ -144,33 +145,34 @@ namespace ConsultantDashboard.Services.Implement
             if (section3_Image != null)
                 consultant.Section3_Image = await SaveFileAsync(section3_Image, Section3ImageFolder);
 
-            consultant.FullName = dto.FullName;
-            consultant.Role = dto.Role;
-            consultant.LocationURL = dto.LocationURL;
-            consultant.JoinDate = dto.JoinDate;
-            consultant.Countries = dto.Countries;
-            consultant.Languages = dto.Languages;
-            consultant.HospitalClinicAddress = dto.HospitalClinicAddress;
-            consultant.Email = dto.Email;
-            consultant.Experience = dto.Experience;
-            consultant.FacebookId = dto.FacebookId;
-            consultant.InstagramId = dto.InstagramId;
-            consultant.TwitterId = dto.TwitterId;
-            consultant.YoutubeId = dto.YoutubeId;
-            consultant.Tagline1 = dto.Tagline1;
-            consultant.Tagline2 = dto.Tagline2;
-            consultant.Tagline3 = dto.Tagline3;
-            consultant.Section2_Tagline = dto.Section2_Tagline;
-            consultant.Certificates = dto.Certificates;
-            consultant.Description = dto.Description;
-            consultant.Section3_Tagline = dto.Section3_Tagline;
-            consultant.Section3_Description = dto.Section3_Description;
+            // Selective property updates
+            if (dto.FullName != null) consultant.FullName = dto.FullName;
+            if (dto.Role != null) consultant.Role = dto.Role;
+            if (dto.LocationURL != null) consultant.LocationURL = dto.LocationURL;
+            if (dto.JoinDate != null) consultant.JoinDate = dto.JoinDate;
+            if (dto.Countries != null) consultant.Countries = dto.Countries;
+            if (dto.Languages != null) consultant.Languages = dto.Languages;
+            if (dto.HospitalClinicAddress != null) consultant.HospitalClinicAddress = dto.HospitalClinicAddress;
+            if (dto.Email != null) consultant.Email = dto.Email;
+            if (dto.Experience != null) consultant.Experience = dto.Experience;
+            if (dto.FacebookId != null) consultant.FacebookId = dto.FacebookId;
+            if (dto.InstagramId != null) consultant.InstagramId = dto.InstagramId;
+            if (dto.TwitterId != null) consultant.TwitterId = dto.TwitterId;
+            if (dto.YoutubeId != null) consultant.YoutubeId = dto.YoutubeId;
+            if (dto.Tagline1 != null) consultant.Tagline1 = dto.Tagline1;
+            if (dto.Tagline2 != null) consultant.Tagline2 = dto.Tagline2;
+            if (dto.Tagline3 != null) consultant.Tagline3 = dto.Tagline3;
+            if (dto.Section2_Tagline != null) consultant.Section2_Tagline = dto.Section2_Tagline;
+            if (dto.Certificates != null) consultant.Certificates = dto.Certificates;
+            if (dto.Description != null) consultant.Description = dto.Description;
+            if (dto.Section3_Tagline != null) consultant.Section3_Tagline = dto.Section3_Tagline;
+            if (dto.Section3_Description != null) consultant.Section3_Description = dto.Section3_Description;
 
-            _context.ConsultantProfile.Update(consultant);
             await _context.SaveChangesAsync();
 
             return ("Consultant Profile Updated Successfully!", consultant);
         }
+
 
         private async Task<string> SaveFileAsync(IFormFile file, string folderName)
         {
