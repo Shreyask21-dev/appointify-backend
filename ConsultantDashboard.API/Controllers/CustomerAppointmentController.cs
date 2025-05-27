@@ -1,6 +1,8 @@
-﻿using ConsultantDashboard.Core.Models;
+﻿using ConsultantDashboard.Core.DTOs;
+using ConsultantDashboard.Core.Models;
 using ConsultantDashboard.Services.IImplement;
 using ConsultantDashboard.Services.Implement;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ConsultantDashboard.API.Controllers
@@ -17,13 +19,43 @@ namespace ConsultantDashboard.API.Controllers
         }
 
         [HttpPost("CreateAppointment")]
-        public async Task<IActionResult> CreateAppointment([FromBody] CustomerAppointments model)
+        public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDTOs dto)
         {
-            var result = await _appointmentService.CreateAppointmentAsync(model);
-            return Ok(result);
+
+            try
+            {
+                var result = await _appointmentService.CreateAppointmentAsync(dto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // You can log ex.Message or ex.InnerException here
+                return StatusCode(500, "An error occurred while creating the appointment.");
+            }
         }
 
-       
+        [HttpPost("VerifyPayment")]
+        public async Task<IActionResult> VerifyPayment([FromBody] PaymentResponse response)
+        {
+            if (response == null || string.IsNullOrEmpty(response.OrderId))
+                return BadRequest("Invalid payment data.");
+
+            try
+            {
+                var result = await _appointmentService.VerifyPaymentAsync(response);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException knfEx)
+            {
+                return NotFound(knfEx.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
 
         [HttpGet("GetAllAppointments")]
         public async Task<IActionResult> GetAllAppointments()

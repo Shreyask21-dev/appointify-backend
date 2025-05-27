@@ -8,6 +8,8 @@ using Razorpay.Api;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ConsultantDashboard.Core.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ConsultantDashboard.Services.Implement
 {
@@ -25,59 +27,96 @@ namespace ConsultantDashboard.Services.Implement
             _secret = configuration["Razorpay:Secret"];
             _httpContextAccessor = httpContextAccessor;
         }
-
-        public async Task<object> CreateAppointmentAsync(CustomerAppointments model)
+        public async Task<object> CreateAppointmentAsync(CreateAppointmentDTOs model)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Get UserId from authenticated user
+                Guid userId;
+
+                // Try get UserId from logged-in user claim
                 var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var parsedUserId))
                 {
-                    throw new UnauthorizedAccessException("User is not authenticated or invalid UserId.");
+                    // Logged-in user
+                    userId = parsedUserId;
+                }
+                else
+                {
+                    // Anonymous user: check if this user (by Email or Phone) already exists in appointments
+                    var existingAppointment = await _context.CustomerAppointments
+                        .Where(a => a.Email == model.Email || a.PhoneNumber == model.PhoneNumber)
+                        .OrderByDescending(a => a.CreatedDate)
+                        .FirstOrDefaultAsync();
+
+                    if (existingAppointment != null)
+                    {
+                        userId = existingAppointment.UserId; // reuse existing UserId
+                    }
+                    else
+                    {
+                        userId = Guid.NewGuid(); // new user id
+                    }
                 }
 
-                model.Id = Guid.NewGuid();
-                model.UserId = userId;
-                model.CreatedDate = DateTime.UtcNow;
-                model.UpdatedDate = DateTime.UtcNow;
-                model.AppointmentStatus = AppointmentStatus.Pending;
-
-                await _context.CustomerAppointments.AddAsync(model);
-                await _context.SaveChangesAsync();
-
-                // Create Razorpay order
-                RazorpayClient client = new RazorpayClient(_key, _secret);
-                Dictionary<string, object> options = new()
+                var appointment = new CustomerAppointments
                 {
-                    { "amount", model.Amount * 100 },
-                    { "currency", "INR" },
-                    { "receipt", model.Id.ToString() },
-                    { "payment_capture", 1 }
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    Email = model.Email,
+                    Plan = model.Plan,
+                    PhoneNumber = model.PhoneNumber,
+                    Amount = model.Amount,
+                    Duration = model.Duration,
+                    Details = model.Details,
+                    AppointmentTime = model.AppointmentTime,
+                    AppointmentDate = model.AppointmentDate,
+                    AppointmentStatus = AppointmentStatus.Pending,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
                 };
 
-                Order order = client.Order.Create(options);
+                await _context.CustomerAppointments.AddAsync(appointment);
+                await _context.SaveChangesAsync();
 
-                // Save Razorpay OrderId
-                model.OrderId = order["id"].ToString();
+                RazorpayClient client = new RazorpayClient(_key, _secret);
+                Dictionary<string, object> options = new()
+        {
+            { "amount", appointment.Amount * 100 },
+            { "currency", "INR" },
+            { "receipt", appointment.Id.ToString() },
+            { "payment_capture", 1 }
+        };
+
+                Order order = client.Order.Create(options);
+                appointment.OrderId = order["id"].ToString();
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
 
                 return new
                 {
-                    OrderId = model.OrderId,
-                    AppointmentId = model.Id.ToString(),
-                    model.Amount
+                    OrderId = appointment.OrderId,
+                    AppointmentId = appointment.Id.ToString(),
+                    appointment.Amount
                 };
             }
-            catch
+            catch (DbUpdateException ex)
             {
                 await transaction.RollbackAsync();
-                throw;
+                Console.WriteLine("Error in CreateAppointmentAsync: " + ex.Message);
+                Console.WriteLine("Stack Trace: " + ex.StackTrace);
+                var inner = ex.InnerException?.Message;
+                Console.WriteLine(inner);
+
+                // Remove this: return StatusCode(500, inner);  // <-- This causes the error
+                throw new Exception("Database error occurred", ex);
             }
+
+
         }
 
         public async Task<object> VerifyPaymentAsync(PaymentResponse response)
@@ -99,7 +138,7 @@ namespace ConsultantDashboard.Services.Implement
             }
 
             var appointment = await _context.CustomerAppointments
-                .FirstOrDefaultAsync(a => a.Id == Guid.Parse(response.AppointmentId));
+                .FirstOrDefaultAsync(a => a.Id == Guid.Parse(response.OrderId));
 
             if (appointment == null)
                 throw new KeyNotFoundException("Customer Appointment not found.");
@@ -140,7 +179,6 @@ namespace ConsultantDashboard.Services.Implement
             return Convert.ToBase64String(pdfBytes);
         }
 
-     
         public async Task UpdateAppointmentAsync(Guid id, CustomerAppointments updatedAppointment)
         {
             var existingAppointment = await _context.CustomerAppointments.FirstOrDefaultAsync(a => a.Id == id);
@@ -169,7 +207,6 @@ namespace ConsultantDashboard.Services.Implement
         public async Task DeleteAppointmentAsync(Guid id)
         {
             var customerAppointment = await _context.CustomerAppointments.FirstOrDefaultAsync(a => a.Id == id);
-
             if (customerAppointment == null)
                 throw new KeyNotFoundException("Customer appointment not found.");
 
@@ -202,28 +239,29 @@ namespace ConsultantDashboard.Services.Implement
                     a.CreatedDate,
                     a.UpdatedDate
                 }).ToList();
+
                 return result;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error in GetAllAppointmentsAsync: " + ex);
+                Console.WriteLine("Error in GetAllAppointmentsAsync: " + ex.Message);
                 throw;
             }
         }
 
-
         public async Task<IEnumerable<object>> GetBookedSlotsAsync(DateTime date, string plan)
         {
-            var dateStr = date.ToString("yyyy-MM-dd");
+            var appointments = await _context.CustomerAppointments
+                .Where(a => a.Plan == plan && a.AppointmentStatus != AppointmentStatus.Cancelled)
+                .ToListAsync(); // Move the data into memory
 
-            var slots = await _context.CustomerAppointments
-                .Where(a => a.AppointmentDate == dateStr && a.Plan == plan && a.AppointmentStatus != AppointmentStatus.Cancelled)
+            var slots = appointments
+                .Where(a => DateTime.TryParse(a.AppointmentDate, out var parsedDate) && parsedDate.Date == date.Date)
                 .Select(a => new
                 {
                     Time = a.AppointmentTime,
                     Status = a.AppointmentStatus.ToString()
-                })
-                .ToListAsync();
+                });
 
             return slots;
         }

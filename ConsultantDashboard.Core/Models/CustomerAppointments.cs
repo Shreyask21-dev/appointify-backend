@@ -27,7 +27,7 @@ namespace ConsultantDashboard.Core.Models
         public string PhoneNumber { get; set; }
 
         [Required]
-        public string Duration { get; set; }
+        public string? Duration { get; set; }
 
         [Required]
         public  string AppointmentTime { get; set; }
@@ -65,8 +65,6 @@ namespace ConsultantDashboard.Core.Models
     {
         public string? OrderId { get; set; }
         public string? PaymentId { get; set; }
-        public string? AppointmentId { get; set; }
-
         public string? Signature { get; set; }
     }
 
