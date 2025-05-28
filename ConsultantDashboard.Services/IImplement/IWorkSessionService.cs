@@ -9,8 +9,8 @@ namespace ConsultantDashboard.Services.IImplement
 {
     public interface IWorkSessionService
     {
-        Task<WorkSessionReadDTOs> CreateSessionAsync(WorkSessionCreateDTOs dto);
         Task<IEnumerable<WorkSessionReadDTOs>> GetAllSessionsAsync();
+        Task<WorkSessionReadDTOs> UpdateSessionAsync(int id, WorkSessionUpdateDTOs dto);
     }
 
 }

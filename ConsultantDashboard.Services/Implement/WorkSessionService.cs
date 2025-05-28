@@ -19,25 +19,41 @@ namespace ConsultantDashboard.Services.Implement
         {
             _context = context;
         }
-        public async Task<WorkSessionReadDTOs> CreateSessionAsync(WorkSessionCreateDTOs dto)
-        {
-            var start = DateTime.Parse(dto.WorkStartTime, null, DateTimeStyles.RoundtripKind); // Handles ISO 8601
-            var end = DateTime.Parse(dto.WorkEndTime, null, DateTimeStyles.RoundtripKind);
 
-            var session = new WorkSession
+        // ✅ ONLY GET
+        public async Task<IEnumerable<WorkSessionReadDTOs>> GetAllSessionsAsync()
+        {
+            var all = await _context.WorkSessions.ToListAsync();
+
+            return all.Select(s => new WorkSessionReadDTOs
             {
-                WorkStartTime = start,
-                WorkEndTime = end
-            };
+                Id = s.Id,
+                WorkStartTime = s.WorkStartTime.ToString("hh:mm tt"),
+                WorkEndTime = s.WorkEndTime.ToString("hh:mm tt"),
+                Duration = s.Duration.ToString(@"hh\:mm")
+            });
+        }
+
+        // ✅ UPDATE
+        public async Task<WorkSessionReadDTOs> UpdateSessionAsync(int id, WorkSessionUpdateDTOs dto)
+        {
+            var session = await _context.WorkSessions.FindAsync(id);
+            if (session == null)
+            {
+                throw new Exception($"Work session with ID {id} not found.");
+            }
+
+            session.WorkStartTime = DateTime.Parse(dto.WorkStartTime, null, DateTimeStyles.RoundtripKind);
+            session.WorkEndTime = DateTime.Parse(dto.WorkEndTime, null, DateTimeStyles.RoundtripKind);
 
             try
             {
-                _context.WorkSessions.Add(session);
+                _context.WorkSessions.Update(session);
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                throw new Exception("Error creating work session: " +
+                throw new Exception("Error updating work session: " +
                     (ex.InnerException?.Message ?? ex.Message));
             }
 
@@ -49,20 +65,5 @@ namespace ConsultantDashboard.Services.Implement
                 Duration = (session.WorkEndTime - session.WorkStartTime).ToString(@"hh\:mm")
             };
         }
-
-        public async Task<IEnumerable<WorkSessionReadDTOs>> GetAllSessionsAsync()
-        {
-            var all = await _context.WorkSessions.ToListAsync();
-
-            return all.Select(s => new WorkSessionReadDTOs
-            {
-                Id = s.Id,
-                WorkStartTime = s.WorkStartTime.ToString("hh:mm tt"),   // ✅ Correct for DateTime
-                WorkEndTime = s.WorkEndTime.ToString("hh:mm tt"),       // ✅
-                Duration = s.Duration.ToString(@"hh\:mm")               // ✅ Correct for TimeSpan
-            });
-        }
-
-
     }
 }

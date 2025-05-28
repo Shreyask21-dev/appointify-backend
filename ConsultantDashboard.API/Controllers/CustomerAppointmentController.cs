@@ -80,11 +80,11 @@ namespace ConsultantDashboard.API.Controllers
         }
 
         [HttpGet("GetBookedSlots")]
-        public async Task<IActionResult> GetBookedSlots([FromQuery] DateTime date, [FromQuery] string plan)
+        public async Task<IActionResult> GetBookedSlots([FromQuery] string date)
         {
             try
             {
-                var result = await _appointmentService.GetBookedSlotsAsync(date, plan);
+                var result = await _appointmentService.GetBookedSlotsAsync(date);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -92,6 +92,16 @@ namespace ConsultantDashboard.API.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+        [HttpGet("unique-users")]
+        public async Task<IActionResult> GetUniqueUsers()
+        {
+            var result = await _appointmentService.GetUniqueUsersWithAppointmentsAsync();
+            return Ok(result);
+        }
+
+
+
 
 
     }

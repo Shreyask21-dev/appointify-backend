@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ConsultantDashboard.Core.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace ConsultantDashboard.Services.Implement
 {
@@ -248,23 +250,91 @@ namespace ConsultantDashboard.Services.Implement
             }
         }
 
-        public async Task<IEnumerable<object>> GetBookedSlotsAsync(DateTime date, string plan)
+
+   
+
+        public async Task<IEnumerable<object>> GetUniqueUsersWithAppointmentsAsync()
         {
+            var users = await _context.CustomerAppointments
+                .GroupBy(a => new { a.UserId, a.FirstName, a.LastName, a.Email, a.PhoneNumber })
+                .Select(g => new
+                {
+                    FirstName = g.Key.FirstName ,
+                    LastName = g.Key.LastName,
+                    Email = g.Key.Email,
+                    PhoneNumber = g.Key.PhoneNumber,
+                    TotalAppointments = g.Count(),
+                    LastAppointmentDate = g.Max(a => a.CreatedDate)
+                })
+                .OrderByDescending(u => u.LastAppointmentDate)
+                .ToListAsync();
+
+            // Format LastAppointment to string
+            var result = users.Select(g => new
+            {
+                g.FirstName,
+                g.LastName,
+                g.Email,
+                g.PhoneNumber,
+                g.TotalAppointments,
+                LastAppointment = g.LastAppointmentDate.ToString("dd-MM-yyyy") // 👈 readable format
+            });
+
+            return result;
+
+        }
+
+        public async Task<IEnumerable<BookedSlotDto>> GetBookedSlotsAsync(string date)
+        {
+            if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var inputDate))
+            {
+                return Enumerable.Empty<BookedSlotDto>();
+            }
+
             var appointments = await _context.CustomerAppointments
-                .Where(a => a.Plan == plan && a.AppointmentStatus != AppointmentStatus.Cancelled)
-                .ToListAsync(); // Move the data into memory
+                .Where(a => a.AppointmentStatus != AppointmentStatus.Cancelled)
+                .ToListAsync();
 
             var slots = appointments
-                .Where(a => DateTime.TryParse(a.AppointmentDate, out var parsedDate) && parsedDate.Date == date.Date)
-                .Select(a => new
+                .Where(a => DateTime.TryParseExact(a.AppointmentDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate)
+                            && parsedDate.Date == inputDate.Date)
+                .Select(a =>
                 {
-                    Time = a.AppointmentTime,
-                    Status = a.AppointmentStatus.ToString()
+                    var (start, end) = ParseTimeRange(a.AppointmentTime);
+                    return new BookedSlotDto
+                    {
+                        StartTime = start,
+                        EndTime = end,
+                        OriginalTime = a.AppointmentTime,
+                        Status = a.AppointmentStatus.ToString()
+                    };
                 });
 
             return slots;
         }
 
+        // Helper method to parse time range string to TimeSpan start/end
+        private (TimeSpan Start, TimeSpan End) ParseTimeRange(string timeRange)
+        {
+            var parts = timeRange.Split('-').Select(t => t.Trim()).ToArray();
+            if (parts.Length != 2)
+                return (TimeSpan.Zero, TimeSpan.Zero);
 
+            var start = DateTime.Parse(parts[0]).TimeOfDay;
+            var end = DateTime.Parse(parts[1]).TimeOfDay;
+
+            return (start, end);
+        }
     }
+
+    // DTO class for returning slot info
+    public class BookedSlotDto
+    {
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+        public string OriginalTime { get; set; }
+        public string Status { get; set; }
+    }
+
 }
+

@@ -16,31 +16,31 @@ namespace ConsultantDashboard.API.Controllers
             _workSessionService = workSessionService;
         }
 
-        // POST: api/WorkSession
-        [HttpPost]
-        public async Task<IActionResult> CreateWorkSession([FromBody] WorkSessionCreateDTOs dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            try
-            {
-                var created = await _workSessionService.CreateSessionAsync(dto);
-                return Ok(created);
-            }
-            catch (Exception ex)
-            {
-                // log ex here if you have a logger
-                return StatusCode(500, $"Error creating work session: {ex.Message}");
-            }
-        }
-
+     
         // GET: api/WorkSession
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var sessions = await _workSessionService.GetAllSessionsAsync();
             return Ok(sessions);
+        }
+
+        // PUT: api/WorkSession/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] WorkSessionUpdateDTOs dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var updatedSession = await _workSessionService.UpdateSessionAsync(id, dto);
+                return Ok(updatedSession);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
     }
 }

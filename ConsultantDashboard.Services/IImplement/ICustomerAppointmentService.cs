@@ -1,5 +1,6 @@
 ﻿using ConsultantDashboard.Core.DTOs;
 using ConsultantDashboard.Core.Models;
+using ConsultantDashboard.Services.Implement;
 
 namespace ConsultantDashboard.Services.IImplement
 {
@@ -10,7 +11,9 @@ namespace ConsultantDashboard.Services.IImplement
         Task<IEnumerable<object>> GetAllAppointmentsAsync();
         Task UpdateAppointmentAsync(Guid id, CustomerAppointments updatedAppointment);
         Task DeleteAppointmentAsync(Guid id);
-        Task<IEnumerable<object>> GetBookedSlotsAsync(DateTime date, string plan);
+        Task<IEnumerable<BookedSlotDto>> GetBookedSlotsAsync(string date);
+
+        Task<IEnumerable<object>> GetUniqueUsersWithAppointmentsAsync();
 
 
     }
