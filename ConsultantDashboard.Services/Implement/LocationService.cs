@@ -29,7 +29,8 @@ namespace ConsultantDashboard.Services.Implement
             return new LocationDTOs
             {
                 Latitude = loc.Latitude,
-                Longitude = loc.Longitude
+                Longitude = loc.Longitude,
+                IFrameURL=loc.IFrameURL
             };
         }
 
@@ -41,13 +42,15 @@ namespace ConsultantDashboard.Services.Implement
                 _context.Locations.Add(new Location
                 {
                     Latitude = dto.Latitude,
-                    Longitude = dto.Longitude
+                    Longitude = dto.Longitude,
+                    IFrameURL = dto.IFrameURL
                 });
             }
             else
             {
                 existing.Latitude = dto.Latitude;
                 existing.Longitude = dto.Longitude;
+                existing.IFrameURL = dto.IFrameURL;
             }
 
             await _context.SaveChangesAsync();
