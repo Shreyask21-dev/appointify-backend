@@ -88,13 +88,16 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowHTTPFrontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
+    options.AddPolicy("AllowVercelFrontend",
+        policy =>
+        {
+            policy.WithOrigins("https://appointify-frontend.vercel.app")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
 });
+
+
 
 
 
@@ -141,7 +144,8 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // CORS must come before Authentication/Authorization
-app.UseCors("AllowHTTPFrontend");
+app.UseCors("AllowVercelFrontend");
+
 
 app.UseAuthentication();
 app.UseAuthorization();
