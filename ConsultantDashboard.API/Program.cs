@@ -1,4 +1,4 @@
-using ConsultantDashboard.Infrastructure.Data;     // your DbContext
+﻿using ConsultantDashboard.Infrastructure.Data;     // your DbContext
 using ConsultantDashboard.Core.Models;             // your ApplicationUser
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
@@ -88,14 +88,15 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowVercelFrontend",
+    options.AddPolicy("AllowFrontendClients",
         policy =>
         {
-            policy.WithOrigins("https://appointify-frontend.vercel.app")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+            policy.AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
         });
 });
+
 
 
 
@@ -144,7 +145,8 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // CORS must come before Authentication/Authorization
-app.UseCors("AllowVercelFrontend");
+app.UseCors("AllowFrontendClients");
+
 
 
 app.UseAuthentication();
