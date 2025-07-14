@@ -1,10 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System;
 using Org.BouncyCastle.Asn1.Mozilla;
+using ConsultantDashboard.Core.Entities;
 
 namespace ConsultantDashboard.Core.Models
 {
-    public class CustomerAppointments
+
+
+    public class CustomerAppointmentsModel
     {
 
         public Guid Id { get; set; } = Guid.NewGuid();
@@ -30,7 +33,7 @@ namespace ConsultantDashboard.Core.Models
         public string? Duration { get; set; }
 
         [Required]
-        public  string AppointmentTime { get; set; }
+        public string AppointmentTime { get; set; }
 
         [Required]
         public string AppointmentDate { get; set; }
@@ -38,7 +41,7 @@ namespace ConsultantDashboard.Core.Models
         [Required]
         public string Plan { get; set; }
 
-       
+
         public string? Details { get; set; }
 
         [Required]
@@ -61,30 +64,6 @@ namespace ConsultantDashboard.Core.Models
     }
 
 
-    public class PaymentResponse
-    {
-        public string? OrderId { get; set; }
-        public string? PaymentId { get; set; }
-        public string? Signature { get; set; }
-    }
-
-    public enum PaymentStatus
-    {
-          Pending,
-          Paid,
-          Failed,
-          Refunded
-      
-    }
-
-    // Enum for Appointment Status
-    public enum AppointmentStatus
-    {
-        Scheduled,
-        Completed,
-        Cancelled,
-        Rescheduled,
-        Pending
-    }
+  
 
 }

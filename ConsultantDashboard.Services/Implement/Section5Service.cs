@@ -1,9 +1,9 @@
 ﻿using ConsultantDashboard.Core.DTOs;
-using ConsultantDashboard.Core.Models;
 using ConsultantDashboard.Infrastructure.Data; // Assuming DbContext is here
 using Microsoft.EntityFrameworkCore;
 using ConsultantDashboard.Services.IImplement;
 using System;
+using ConsultantDashboard.Core.Entities;
 
 namespace ConsultantDashboard.Services.Implement
 {

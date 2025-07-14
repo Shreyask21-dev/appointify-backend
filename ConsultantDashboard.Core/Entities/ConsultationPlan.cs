@@ -5,7 +5,7 @@ namespace ConsultantDashboard.Core.Entities
     public class ConsultationPlan
     {
         [Key]
-        public Guid PlanId { get; set; }
+        public Guid? PlanId { get; set; }
 
         [Required, MaxLength(100)]
         public string PlanName { get; set; }
@@ -23,6 +23,10 @@ namespace ConsultantDashboard.Core.Entities
 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+
+        public Guid? ShiftId { get; set; }
+        // ✅ Add this navigation property to fix the error:
+        public ICollection<ConsultantShift> ConsultantShifts { get; set; }
     }
 
 }

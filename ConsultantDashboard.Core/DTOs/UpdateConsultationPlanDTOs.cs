@@ -8,6 +8,7 @@
             public string PlanDuration { get; set; }
             public string PlanDescription { get; set; }
             public string PlanFeatures { get; set; }
-        
+        public Guid? ShiftId { get; set; }
+
     }
 }

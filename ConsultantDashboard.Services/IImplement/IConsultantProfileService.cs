@@ -1,4 +1,5 @@
 ﻿using ConsultantDashboard.Core.DTOs;
+using ConsultantDashboard.Core.Entities;
 using ConsultantDashboard.Core.Models;
 using Microsoft.AspNetCore.Http;
 using System;

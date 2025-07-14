@@ -1,11 +1,11 @@
 ﻿using ConsultantDashboard.Core.DTOs;
-using ConsultantDashboard.Core.Models;
 using ConsultantDashboard.Services.Implement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Xunit;
 using System.Threading.Tasks;
+using ConsultantDashboard.Core.Entities;
 
 public class AuthServiceTests
 {

@@ -1,5 +1,5 @@
-﻿using ConsultantDashboard.Core.Models;
-using ConsultantDashboard.Core.DTOs;
+﻿using ConsultantDashboard.Core.DTOs;
+using ConsultantDashboard.Core.Entities;
 using ConsultantDashboard.Infrastructure.Data;
 using ConsultantDashboard.Services.IImplement;
 using Microsoft.EntityFrameworkCore;

@@ -22,7 +22,7 @@ namespace ConsultantDashboard.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.ApplicationUser", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -80,7 +80,7 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.ConsultantProfile", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.ConsultantProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -167,9 +167,41 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                     b.ToTable("ConsultantProfile");
                 });
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.ConsultationPlan", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.ConsultantShift", b =>
                 {
-                    b.Property<Guid>("PlanId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("PlanId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId");
+
+                    b.ToTable("ConsultantShifts");
+                });
+
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.ConsultationPlan", b =>
+                {
+                    b.Property<Guid?>("PlanId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -195,7 +227,11 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<decimal>("PlanPrice")
-                        .HasColumnType("decimal(10,2)");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("ShiftId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -205,7 +241,7 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                     b.ToTable("ConsultationPlans");
                 });
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.CustomerAppointments", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.CustomerAppointment", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -281,7 +317,7 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                     b.ToTable("CustomerAppointments");
                 });
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.Faq", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.Faq", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -302,7 +338,7 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                     b.ToTable("Faqs");
                 });
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.Location", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.Location", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -314,93 +350,43 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Latitude")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Longitude")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Locations");
                 });
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.PatientProfile", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.PlanBufferRule+PlanShiftBufferRule", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("Age")
+                    b.Property<int>("BufferInMinutes")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TotalAppointments")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("PlanId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ShiftId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("ShiftId");
 
-                    b.ToTable("PatientProfiles");
+                    b.HasIndex("PlanId", "ShiftId")
+                        .IsUnique();
+
+                    b.ToTable("PlanShiftBufferRules");
                 });
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.PatientRegistration", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("Age")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PatientRegistrations");
-                });
-
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.Section5Content", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.Section5Content", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -425,7 +411,7 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                     b.ToTable("Section5Contents");
                 });
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.Stat", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.Stat", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -448,25 +434,6 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Stats");
-                });
-
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.WorkSession", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("WorkEndTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("WorkStartTime")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("WorkSessions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -602,15 +569,33 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ConsultantDashboard.Core.Models.PatientProfile", b =>
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.ConsultantShift", b =>
                 {
-                    b.HasOne("ConsultantDashboard.Core.Models.PatientRegistration", "User")
+                    b.HasOne("ConsultantDashboard.Core.Entities.ConsultationPlan", "Plan")
+                        .WithMany("ConsultantShifts")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.PlanBufferRule+PlanShiftBufferRule", b =>
+                {
+                    b.HasOne("ConsultantDashboard.Core.Entities.ConsultationPlan", "Plan")
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.HasOne("ConsultantDashboard.Core.Entities.ConsultantShift", "Shift")
+                        .WithMany()
+                        .HasForeignKey("ShiftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+
+                    b.Navigation("Shift");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -624,7 +609,7 @@ namespace ConsultantDashboard.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("ConsultantDashboard.Core.Models.ApplicationUser", null)
+                    b.HasOne("ConsultantDashboard.Core.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -633,7 +618,7 @@ namespace ConsultantDashboard.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("ConsultantDashboard.Core.Models.ApplicationUser", null)
+                    b.HasOne("ConsultantDashboard.Core.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -648,7 +633,7 @@ namespace ConsultantDashboard.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ConsultantDashboard.Core.Models.ApplicationUser", null)
+                    b.HasOne("ConsultantDashboard.Core.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -657,11 +642,16 @@ namespace ConsultantDashboard.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("ConsultantDashboard.Core.Models.ApplicationUser", null)
+                    b.HasOne("ConsultantDashboard.Core.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ConsultantDashboard.Core.Entities.ConsultationPlan", b =>
+                {
+                    b.Navigation("ConsultantShifts");
                 });
 #pragma warning restore 612, 618
         }

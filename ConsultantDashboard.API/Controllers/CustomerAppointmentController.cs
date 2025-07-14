@@ -1,4 +1,5 @@
 ﻿using ConsultantDashboard.Core.DTOs;
+using ConsultantDashboard.Core.Entities;
 using ConsultantDashboard.Core.Models;
 using ConsultantDashboard.Services.IImplement;
 using ConsultantDashboard.Services.Implement;
@@ -33,27 +34,29 @@ namespace ConsultantDashboard.API.Controllers
                 return StatusCode(500, "An error occurred while creating the appointment.");
             }
         }
-
         [HttpPost("VerifyPayment")]
-        public async Task<IActionResult> VerifyPayment([FromBody] PaymentResponse response)
+        public async Task<IActionResult> VerifyPayment([FromBody] PaymentResponseDTO response)
         {
-            if (response == null || string.IsNullOrEmpty(response.OrderId))
-                return BadRequest("Invalid payment data.");
-
             try
             {
                 var result = await _appointmentService.VerifyPaymentAsync(response);
                 return Ok(result);
             }
-            catch (KeyNotFoundException knfEx)
-            {
-                return NotFound(knfEx.Message);
-            }
-            catch (Exception ex)
+            catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
+
+
 
 
 
@@ -66,7 +69,7 @@ namespace ConsultantDashboard.API.Controllers
 
 
         [HttpPut("UpdateAppointment/{id}")]
-        public async Task<IActionResult> UpdateAppointment(Guid id, [FromBody] CustomerAppointments updatedAppointment)
+        public async Task<IActionResult> UpdateAppointment(Guid id, [FromBody] CustomerAppointment updatedAppointment)
         {
             await _appointmentService.UpdateAppointmentAsync(id, updatedAppointment);
             return Ok("Appointment updated successfully.");
@@ -99,6 +102,45 @@ namespace ConsultantDashboard.API.Controllers
             var result = await _appointmentService.GetUniqueUsersWithAppointmentsAsync();
             return Ok(result);
         }
+
+
+        // Your PATCH endpoint goes here 👇
+        [HttpPatch("patch/{userId}")]
+        public async Task<IActionResult> UpdateUserInfo(Guid userId, [FromBody] UpdateUniqueAppointment model)
+        {
+            await _appointmentService.UpdateUserInfoByUserIdAsync(userId, model.FirstName, model.LastName, model.Email, model.PhoneNumber);
+            return Ok("User info updated successfully.");
+        }
+
+        [HttpDelete("delete-by-user/{userId}")]
+        public async Task<IActionResult> DeleteByUserId(Guid userId)
+        {
+            await _appointmentService.DeleteAppointmentsByUserIdAsync(userId);
+            return Ok("Appointments deleted successfully.");
+        }
+
+        [HttpGet("GetInvoice")]
+        public async Task<IActionResult> GetInvoice([FromQuery] Guid id)
+        {
+            try
+            {
+                var receiptBase64 = await _appointmentService.GenerateInvoiceAsync(id);
+                return Ok(new { base64Pdf = receiptBase64 }); // 👈 match frontend key: base64Pdf
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Failed to generate invoice.");
+            }
+        }
+
+
+
+
+
 
 
 

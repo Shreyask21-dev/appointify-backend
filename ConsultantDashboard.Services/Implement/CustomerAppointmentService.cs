@@ -1,5 +1,7 @@
 ﻿using System.Text;
 using ConsultantDashboard.Core.Models;
+using ConsultantDashboard.Core.Entities;
+
 using ConsultantDashboard.Infrastructure.Data;
 using ConsultantDashboard.Services.IImplement;
 using Microsoft.EntityFrameworkCore;
@@ -21,13 +23,19 @@ namespace ConsultantDashboard.Services.Implement
         private readonly string _key;
         private readonly string _secret;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IEmailService _emailService;
 
-        public CustomerAppointmentService(ApplicationDbContext context, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
+        public CustomerAppointmentService(
+           ApplicationDbContext context,
+           IConfiguration configuration,
+           IHttpContextAccessor httpContextAccessor,
+           IEmailService emailService)
         {
             _context = context;
             _key = configuration["Razorpay:Key"];
             _secret = configuration["Razorpay:Secret"];
             _httpContextAccessor = httpContextAccessor;
+            _emailService = emailService;
         }
         public async Task<object> CreateAppointmentAsync(CreateAppointmentDTOs model)
         {
@@ -62,7 +70,7 @@ namespace ConsultantDashboard.Services.Implement
                     }
                 }
 
-                var appointment = new CustomerAppointments
+                var appointment = new CustomerAppointment
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
@@ -120,32 +128,40 @@ namespace ConsultantDashboard.Services.Implement
 
         }
 
-        public async Task<object> VerifyPaymentAsync(PaymentResponse response)
+        public async Task<object> VerifyPaymentAsync(PaymentResponseDTO response)
         {
-            try
+            // ✅ Step 1: Check for missing fields
+            if (string.IsNullOrWhiteSpace(response.OrderId) ||
+                string.IsNullOrWhiteSpace(response.PaymentId) ||
+                string.IsNullOrWhiteSpace(response.Signature))
             {
-                var attributes = new Dictionary<string, string>
-                {
-                    { "razorpay_order_id", response.OrderId },
-                    { "razorpay_payment_id", response.PaymentId },
-                    { "razorpay_signature", response.Signature }
-                };
-
-                Utils.verifyPaymentSignature(attributes);
-            }
-            catch
-            {
-                throw new Exception("Payment verification failed due to invalid signature.");
+                throw new ArgumentException("Missing Razorpay payment fields.");
             }
 
+            // ✅ Step 2: Manual signature generation and comparison
+            string payload = $"{response.OrderId}|{response.PaymentId}";
+            string generatedSignature;
+
+            using (var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(_secret)))
+            {
+                var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
+                generatedSignature = BitConverter.ToString(hash).Replace("-", "").ToLower();
+            }
+
+            if (generatedSignature != response.Signature?.ToLower())
+            {
+                throw new Exception($"Payment verification failed: Signature mismatch.\nGenerated: {generatedSignature}\nRazorpay: {response.Signature}");
+            }
+
+            // ✅ Step 3: Lookup appointment by order ID
             var appointment = await _context.CustomerAppointments
-                  .FirstOrDefaultAsync(a => a.OrderId == response.OrderId);
+                .FirstOrDefaultAsync(a => a.OrderId == response.OrderId);
 
             if (appointment == null)
                 throw new KeyNotFoundException("Customer Appointment not found.");
 
+            // ✅ Step 4: Update record
             appointment.PaymentId = response.PaymentId ?? "None";
-            appointment.OrderId = response.OrderId;
             appointment.PaymentStatus = PaymentStatus.Paid;
             appointment.PaymentMethod = "Online";
             appointment.AppointmentStatus = AppointmentStatus.Scheduled;
@@ -154,55 +170,116 @@ namespace ConsultantDashboard.Services.Implement
             _context.CustomerAppointments.Update(appointment);
             await _context.SaveChangesAsync();
 
-            string base64Receipt = GenerateBase64Receipt(appointment);
+            // ✅ Step 5: Send confirmation email
+            string subject = "Appointment Confirmation - Consultant Dashboard";
+            string body = $@"
+Dear {appointment.FirstName} {appointment.LastName},
 
+We are pleased to confirm that your payment has been received and your appointment is now scheduled. Here are the details of your appointment:
+
+------------------------------------------------------------
+📅 Date       : {appointment.AppointmentDate}
+🕒 Time       : {appointment.AppointmentTime}
+📄 Plan       : {appointment.Plan}
+⏱ Duration   : {appointment.Duration} minutes
+💵 Amount     : ₹{appointment.Amount}
+💳 Payment ID : {(string.IsNullOrEmpty(appointment.PaymentId) ? "N/A" : appointment.PaymentId)}
+------------------------------------------------------------
+
+Should you have any questions or require assistance, please feel free to contact our support team.
+
+Warm regards,  
+Consultant Appointment Team
+";
+
+            await _emailService.SendAppointmentEmailAsync(appointment.Email, subject, body);
+
+            // ✅ Return success without receipt
             return new
             {
                 Success = true,
-                Message = base64Receipt != null
-                    ? "Payment verified and receipt generated."
-                    : "Payment verified, but receipt generation failed.",
+                Message = "Payment verified and confirmation email sent.",
                 response.PaymentId,
-                PaymentStatus = "Paid",
-                Receipt = base64Receipt
+                PaymentStatus = "Paid"
             };
         }
 
-        private string GenerateBase64Receipt(CustomerAppointments appointment)
+        private string GenerateBase64Receipt(CustomerAppointment appointment)
         {
-            var pdfContent = $"Receipt for Appointment: {appointment.Id}\n" +
-                             $"Name: {appointment.FirstName} {appointment.LastName}\n" +
-                             $"Amount Paid: ₹{appointment.Amount}\n" +
-                             $"Date: {appointment.AppointmentDate:yyyy-MM-dd} {appointment.AppointmentTime}\n" +
-                             $"Payment ID: {appointment.PaymentId}\n";
+            using var ms = new MemoryStream();
+            var doc = new iTextSharp.text.Document();
+            var writer = iTextSharp.text.pdf.PdfWriter.GetInstance(doc, ms);
+            doc.Open();
 
-            var pdfBytes = Encoding.UTF8.GetBytes(pdfContent);
-            return Convert.ToBase64String(pdfBytes);
+            doc.Add(new iTextSharp.text.Paragraph("Receipt for Appointment"));
+            doc.Add(new iTextSharp.text.Paragraph($"Name: {appointment.FirstName} {appointment.LastName}"));
+            doc.Add(new iTextSharp.text.Paragraph($"Date: {appointment.AppointmentDate}"));
+            doc.Add(new iTextSharp.text.Paragraph($"Time: {appointment.AppointmentTime}"));
+            doc.Add(new iTextSharp.text.Paragraph($"Amount Paid: ₹{appointment.Amount}"));
+            doc.Add(new iTextSharp.text.Paragraph($"Payment ID: {appointment.PaymentId}"));
+
+            doc.Close();
+
+            return Convert.ToBase64String(ms.ToArray());
         }
 
-        public async Task UpdateAppointmentAsync(Guid id, CustomerAppointments updatedAppointment)
+
+        public async Task UpdateAppointmentAsync(Guid id, CustomerAppointment updatedAppointment)
         {
-            var existingAppointment = await _context.CustomerAppointments.FirstOrDefaultAsync(a => a.Id == id);
-            if (existingAppointment == null)
+            var existing = await _context.CustomerAppointments.FirstOrDefaultAsync(a => a.Id == id);
+            if (existing == null)
                 throw new KeyNotFoundException("Appointment not found.");
 
-            existingAppointment.FirstName = updatedAppointment.FirstName;
-            existingAppointment.LastName = updatedAppointment.LastName;
-            existingAppointment.Email = updatedAppointment.Email;
-            existingAppointment.Plan = updatedAppointment.Plan;
-            existingAppointment.PhoneNumber = updatedAppointment.PhoneNumber;
-            existingAppointment.Amount = updatedAppointment.Amount;
-            existingAppointment.Details = updatedAppointment.Details;
-            existingAppointment.PaymentId = updatedAppointment.PaymentId;
-            existingAppointment.AppointmentTime = updatedAppointment.AppointmentTime;
-            existingAppointment.AppointmentDate = updatedAppointment.AppointmentDate;
-            existingAppointment.PaymentMethod = updatedAppointment.PaymentMethod;
-            existingAppointment.AppointmentStatus = updatedAppointment.AppointmentStatus;
-            existingAppointment.Duration = updatedAppointment.Duration;
-            existingAppointment.UpdatedDate = DateTime.UtcNow;
+            bool shouldSendEmail = existing.AppointmentStatus != AppointmentStatus.Scheduled &&
+                                   updatedAppointment.AppointmentStatus == AppointmentStatus.Scheduled;
 
-            _context.CustomerAppointments.Update(existingAppointment);
+            // Update properties
+            existing.FirstName = updatedAppointment.FirstName;
+            existing.LastName = updatedAppointment.LastName;
+            existing.Email = updatedAppointment.Email;
+            existing.Plan = updatedAppointment.Plan;
+            existing.PhoneNumber = updatedAppointment.PhoneNumber;
+            existing.Amount = updatedAppointment.Amount;
+            existing.Details = updatedAppointment.Details;
+            existing.PaymentId = updatedAppointment.PaymentId;
+            existing.AppointmentTime = updatedAppointment.AppointmentTime;
+            existing.AppointmentDate = updatedAppointment.AppointmentDate;
+            existing.PaymentMethod = updatedAppointment.PaymentMethod;
+            existing.AppointmentStatus = updatedAppointment.AppointmentStatus;
+            existing.Duration = updatedAppointment.Duration;
+            existing.UpdatedDate = DateTime.UtcNow;
+
+            _context.CustomerAppointments.Update(existing);
             await _context.SaveChangesAsync();
+
+            if (shouldSendEmail)
+            {
+                string subject = "Appointment Confirmation - Consultant Dashboard";
+
+                string body = $@"
+Dear {existing.FirstName} {existing.LastName},
+
+We are pleased to inform you that your appointment has been successfully scheduled. Please find the details below:
+
+------------------------------------------------------------
+📅 Date       : {existing.AppointmentDate}
+🕒 Time       : {existing.AppointmentTime}
+📄 Plan       : {existing.Plan}
+⏱ Duration   : {existing.Duration} minutes
+💵 Amount     : ₹{existing.Amount}
+💳 Payment ID : {(string.IsNullOrEmpty(existing.PaymentId) ? "N/A" : existing.PaymentId)}
+------------------------------------------------------------
+
+If you have any questions or wish to reschedule, please contact us at your earliest convenience.
+
+We look forward to seeing you.
+
+Warm regards,  
+Consultant Appointment Team
+";
+
+                await _emailService.SendAppointmentEmailAsync(existing.Email, subject, body);
+            }
         }
 
         public async Task DeleteAppointmentAsync(Guid id)
@@ -251,38 +328,37 @@ namespace ConsultantDashboard.Services.Implement
         }
 
 
-   
+
 
         public async Task<IEnumerable<object>> GetUniqueUsersWithAppointmentsAsync()
         {
             var users = await _context.CustomerAppointments
-                .GroupBy(a => new { a.UserId, a.FirstName, a.LastName, a.Email, a.PhoneNumber })
+                .GroupBy(a => a.UserId)
                 .Select(g => new
                 {
-                    FirstName = g.Key.FirstName ,
-                    LastName = g.Key.LastName,
-                    Email = g.Key.Email,
-                    PhoneNumber = g.Key.PhoneNumber,
+                    UserId = g.Key,
+                    // take latest appointment record (by CreatedDate)
+                    Latest = g.OrderByDescending(a => a.CreatedDate).FirstOrDefault(),
                     TotalAppointments = g.Count(),
                     LastAppointmentDate = g.Max(a => a.CreatedDate)
                 })
                 .OrderByDescending(u => u.LastAppointmentDate)
                 .ToListAsync();
 
-            // Format LastAppointment to string
-            var result = users.Select(g => new
+            var result = users.Select(u => new
             {
-                g.FirstName,
-                g.LastName,
-                g.Email,
-                g.PhoneNumber,
-                g.TotalAppointments,
-                LastAppointment = g.LastAppointmentDate.ToString("dd-MM-yyyy") // 👈 readable format
+                UserId = u.UserId,
+                FirstName = u.Latest.FirstName,
+                LastName = u.Latest.LastName,
+                Email = u.Latest.Email,
+                PhoneNumber = u.Latest.PhoneNumber,
+                TotalAppointments = u.TotalAppointments,
+                LastAppointment = u.LastAppointmentDate.ToString("dd-MM-yyyy")
             });
 
             return result;
-
         }
+
 
         public async Task<IEnumerable<BookedSlotDto>> GetBookedSlotsAsync(string date)
         {
@@ -325,7 +401,58 @@ namespace ConsultantDashboard.Services.Implement
 
             return (start, end);
         }
+        public async Task UpdateUserInfoByUserIdAsync(Guid userId, string firstName, string lastName, string email, string phone)
+        {
+            var appointments = await _context.CustomerAppointments
+                .Where(a => a.UserId == userId)
+                .ToListAsync();
+
+            if (!appointments.Any())
+                throw new KeyNotFoundException("No appointments found for the given user.");
+
+            foreach (var appointment in appointments)
+            {
+                appointment.FirstName = firstName;
+                appointment.LastName = lastName;
+                appointment.Email = email;
+                appointment.PhoneNumber = phone;
+                appointment.UpdatedDate = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+
+        public async Task DeleteAppointmentsByUserIdAsync(Guid userId)
+        {
+            var appointments = await _context.CustomerAppointments
+                .Where(a => a.UserId == userId)
+                .ToListAsync();
+
+            if (!appointments.Any())
+                throw new KeyNotFoundException("No appointments found for this user.");
+
+            _context.CustomerAppointments.RemoveRange(appointments);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<string> GenerateInvoiceAsync(Guid appointmentId)
+        {
+            var appointment = await _context.CustomerAppointments
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+
+            if (appointment == null)
+                throw new KeyNotFoundException("Appointment not found");
+
+            return GenerateBase64Receipt(appointment);
+        }
+
+
+
+
     }
+
+
 
     // DTO class for returning slot info
     public class BookedSlotDto

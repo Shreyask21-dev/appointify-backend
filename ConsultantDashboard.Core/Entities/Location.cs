@@ -10,9 +10,6 @@ namespace ConsultantDashboard.Core.Entities
     public class Location
     {
         public int Id { get; set; }
-        public string Latitude { get; set; } = string.Empty;
-        public string Longitude { get; set; } = string.Empty;
-
         public string IFrameURL { get; set; }
     }
 

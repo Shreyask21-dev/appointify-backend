@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ConsultantDashboard.Core.Models
 {
-    public class ConsultantProfile
+    public class ConsultantProfileModel
     {
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();

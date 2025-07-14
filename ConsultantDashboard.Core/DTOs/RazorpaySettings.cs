@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace ConsultantDashboard.Core.DTOs
 {
-    public class WorkSessionUpdateDTOs
+    public class RazorpaySettings
     {
-        public string WorkStartTime { get; set; }
-        public string WorkEndTime { get; set; }
+        public string Key { get; set; }
+        public string Secret { get; set; }
     }
-}
 
+}

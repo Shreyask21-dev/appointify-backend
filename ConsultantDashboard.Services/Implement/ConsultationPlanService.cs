@@ -1,8 +1,9 @@
 ﻿using ConsultantDashboard.Core.DTOs;
-using ConsultantDashboard.Core.Models;
+using ConsultantDashboard.Core.Entities;
 using ConsultantDashboard.Infrastructure.Data;
 using ConsultantDashboard.Services.IImplement;
 using Microsoft.EntityFrameworkCore;
+using Razorpay.Api;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +30,7 @@ namespace ConsultantDashboard.Services.Implement
                 PlanDuration = dto.PlanDuration.Trim(),
                 PlanDescription = dto.PlanDescription.Trim(),
                 PlanFeatures = dto.PlanFeatures.Trim(),
+                ShiftId = dto.ShiftId, // ✅ NEW
                 CreatedAt = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "India Standard Time"),
                 UpdatedAt = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "India Standard Time")
             };
@@ -38,12 +40,13 @@ namespace ConsultantDashboard.Services.Implement
 
             var resultDto = new GetConsultationPlanDTOs
             {
-                PlanId = plan.PlanId,
+                PlanId = (Guid)plan.PlanId,
                 PlanName = plan.PlanName,
                 PlanPrice = plan.PlanPrice,
                 PlanDuration = plan.PlanDuration,
                 PlanDescription = plan.PlanDescription,
                 PlanFeatures = plan.PlanFeatures,
+                ShiftId = plan.ShiftId, // ✅ NEW
                 CreatedAt = plan.CreatedAt,
                 UpdatedAt = plan.UpdatedAt
             };
@@ -54,18 +57,26 @@ namespace ConsultantDashboard.Services.Implement
         public async Task<IEnumerable<GetConsultationPlanDTOs>> GetAllPlansAsync()
         {
             var plans = await _context.ConsultationPlans.ToListAsync();
+
             return plans.Select(p => new GetConsultationPlanDTOs
             {
-                PlanId = p.PlanId,
+                PlanId = (Guid)p.PlanId,
                 PlanName = p.PlanName,
                 PlanPrice = p.PlanPrice,
                 PlanDuration = p.PlanDuration,
                 PlanDescription = p.PlanDescription,
                 PlanFeatures = p.PlanFeatures,
                 CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt
+                UpdatedAt = p.UpdatedAt,
+
+                // ✅ Include ShiftId from PlanBufferRule if it exists
+                ShiftId = _context.PlanShiftBufferRules
+                    .Where(pbr => pbr.PlanId == p.PlanId)
+                    .Select(pbr => (Guid?)pbr.ShiftId)
+                    .FirstOrDefault()
             }).ToList();
         }
+
 
         public async Task<IEnumerable<GetConsultationPlanDTOs>> GetPlanByNameAsync(string planName)
         {
@@ -75,12 +86,13 @@ namespace ConsultantDashboard.Services.Implement
 
             return plans.Select(p => new GetConsultationPlanDTOs
             {
-                PlanId = p.PlanId,
+                PlanId = (Guid)p.PlanId,
                 PlanName = p.PlanName,
                 PlanPrice = p.PlanPrice,
                 PlanDuration = p.PlanDuration,
                 PlanDescription = p.PlanDescription,
                 PlanFeatures = p.PlanFeatures,
+                ShiftId = p.ShiftId, // ✅ NEW
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             });
@@ -97,6 +109,7 @@ namespace ConsultantDashboard.Services.Implement
             plan.PlanDuration = dto.PlanDuration.Trim();
             plan.PlanDescription = dto.PlanDescription.Trim();
             plan.PlanFeatures = dto.PlanFeatures.Trim();
+            plan.ShiftId = dto.ShiftId; // ✅ NEW
             plan.UpdatedAt = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "India Standard Time");
 
             await _context.SaveChangesAsync();

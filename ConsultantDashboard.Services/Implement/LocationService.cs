@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ConsultantDashboard.Core.DTOs;
-using ConsultantDashboard.Core.Models;
+using ConsultantDashboard.Core.Entities;
 using ConsultantDashboard.Infrastructure.Data;
 using ConsultantDashboard.Services.IImplement;
 using Microsoft.EntityFrameworkCore;
@@ -28,11 +28,11 @@ namespace ConsultantDashboard.Services.Implement
 
             return new LocationDTOs
             {
-                Latitude = loc.Latitude,
-                Longitude = loc.Longitude,
-                IFrameURL=loc.IFrameURL
+             
+                IFrameURL = loc.IFrameURL ?? string.Empty
             };
         }
+
 
         public async Task SaveLocationAsync(LocationDTOs dto)
         {
@@ -41,20 +41,56 @@ namespace ConsultantDashboard.Services.Implement
             {
                 _context.Locations.Add(new Location
                 {
-                    Latitude = dto.Latitude,
-                    Longitude = dto.Longitude,
-                    IFrameURL = dto.IFrameURL
+               
+                    IFrameURL = dto.IFrameURL ?? string.Empty
                 });
             }
             else
             {
-                existing.Latitude = dto.Latitude;
-                existing.Longitude = dto.Longitude;
-                existing.IFrameURL = dto.IFrameURL;
+
+                existing.IFrameURL = dto.IFrameURL ?? string.Empty;
             }
 
             await _context.SaveChangesAsync();
         }
+
+
+        public async Task UpdateLocationFromIframeAsync(string iframeUrl)
+        {
+            if (string.IsNullOrWhiteSpace(iframeUrl))
+                throw new ArgumentException("Invalid IFrame URL.");
+
+            var location = await _context.Locations.FirstOrDefaultAsync();
+            if (location == null)
+            {
+                location = new Location
+                {
+                    IFrameURL = iframeUrl,
+                
+                };
+                _context.Locations.Add(location);
+            }
+            else
+            {
+                location.IFrameURL = iframeUrl;
+                // Or keep existing value
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+
+        public async Task DeleteLocationAsync()
+        {
+            var existing = await _context.Locations.FirstOrDefaultAsync();
+            if (existing != null)
+            {
+                _context.Locations.Remove(existing);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+
     }
 
 }

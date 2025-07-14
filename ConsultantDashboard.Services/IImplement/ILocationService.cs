@@ -11,5 +11,8 @@ namespace ConsultantDashboard.Services.IImplement
     {
         Task<LocationDTOs?> GetLocationAsync();
         Task SaveLocationAsync(LocationDTOs dto);
+        Task UpdateLocationFromIframeAsync(string iframeUrl); // ✅ Name matches
+        Task DeleteLocationAsync();
+
     }
 }

@@ -1,9 +1,9 @@
-﻿using System.Reflection.Emit;
-using ConsultantDashboard.Core.Models;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using ConsultantDashboard.Core.Entities;
+using static ConsultantDashboard.Core.Entities.PlanBufferRule;
+using System.Reflection.Emit;
 
 namespace ConsultantDashboard.Infrastructure.Data
 {
@@ -13,39 +13,50 @@ namespace ConsultantDashboard.Infrastructure.Data
         {
 
         }
-        public DbSet<PatientRegistration> PatientRegistrations { get; set; }
-        public DbSet<PatientProfile> PatientProfiles { get; set; }
         public DbSet<ConsultantProfile> ConsultantProfile { get; set; }
-        public DbSet<CustomerAppointments> CustomerAppointments { get; set; }
+        public DbSet<CustomerAppointment> CustomerAppointments { get; set; }
         public DbSet<ConsultationPlan> ConsultationPlans { get; set; }
         public DbSet<Stat> Stats { get; set; }
 
         public DbSet<Section5Content> Section5Contents { get; set; }
         public DbSet<Faq> Faqs { get; set; }
         public DbSet<Location> Locations { get; set; }
-        public DbSet<WorkSession> WorkSessions { get; set; }
-
+        public DbSet<PlanShiftBufferRule> PlanShiftBufferRules { get; set; }
+        public DbSet<ConsultantShift> ConsultantShifts { get; set; }
 
 
 
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<CustomerAppointments>()
+            builder.Entity<CustomerAppointment>()
            .Property(a => a.Amount)
            .HasPrecision(18, 2);
             base.OnModelCreating(builder);
 
-          
-           
+            builder.Entity<PlanShiftBufferRule>()
+           .HasIndex(p => new { p.PlanId, p.ShiftId })
+            .IsUnique();
+
+            builder.Entity<ConsultantShift>()
+           .Property(x => x.Id)
+           .ValueGeneratedOnAdd();
+
             // Configuring the Amount property precision
-            builder.Entity<CustomerAppointments>()
+            builder.Entity<CustomerAppointment>()
                 .Property(a => a.Amount)
                 .HasPrecision(18, 2);
 
             builder.Entity<ConsultantProfile>()
                .Property(x => x.Id)
                .HasDefaultValueSql("NEWID()"); // This generates GUID
+
+            builder.Entity<ConsultantShift>()
+              .HasOne(s => s.Plan)
+              .WithMany(p => p.ConsultantShifts)
+              .HasForeignKey(s => s.PlanId)
+              .OnDelete(DeleteBehavior.NoAction); // or DeleteBehavior.NoAction
+
 
             // ✅ Store as string instead of int
             var appointmentStatusConverter = new ValueConverter<AppointmentStatus, string>(
@@ -58,13 +69,19 @@ namespace ConsultantDashboard.Infrastructure.Data
                 v => (PaymentStatus)v              // int to enum (reading)
             );
 
-            builder.Entity<CustomerAppointments>()
+            builder.Entity<CustomerAppointment>()
                 .Property(e => e.AppointmentStatus)
                 .HasConversion(appointmentStatusConverter);
 
-            builder.Entity<CustomerAppointments>()
+            builder.Entity<CustomerAppointment>()
                 .Property(e => e.PaymentStatus)
                 .HasConversion(paymentStatusConverter);
+
+          
+
+            builder.Entity<ConsultationPlan>()
+              .Property(p => p.PlanPrice)
+              .HasPrecision(18, 2); // 
 
 
             builder.Entity<ApplicationUser>().Ignore(u => u.TwoFactorEnabled);

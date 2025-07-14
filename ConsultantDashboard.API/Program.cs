@@ -1,14 +1,15 @@
 ﻿using ConsultantDashboard.Infrastructure.Data;     // your DbContext
-using ConsultantDashboard.Core.Models;             // your ApplicationUser
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using ConsultantDashboard.Core.Entities;
 using ConsultantDashboard.Services.IImplement;
 using ConsultantDashboard.Services.Implement;
 using ConsultantDashboard.Services;
+using ConsultantDashboard.Core.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,19 +23,21 @@ builder.Configuration
 
 // Make IConfiguration injectable
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
 builder.Services.AddScoped<ICustomerAppointmentService, CustomerAppointmentService>();
 builder.Services.AddScoped<IConsultationPlanService, ConsultationPlanService>();
 builder.Services.AddScoped<IConsultantProfileService, ConsultantProfileService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IPatientAuthService, PatientAuthService>();
 builder.Services.AddScoped<IStatService, StatService>();
 builder.Services.AddScoped<IFaqService, FaqService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<ISection5Service, Section5Service>();
-builder.Services.AddScoped<IWorkSessionService, WorkSessionService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IPlanBufferRuleService, PlanBufferRuleService>();
+builder.Services.AddScoped<IConsultantShiftService, ConsultantShiftService>();
 builder.Services.AddHttpContextAccessor(); // For .NET 6+
 
+builder.Services.Configure<RazorpaySettings>(
+    builder.Configuration.GetSection("Razorpay"));
 
 
 
@@ -82,6 +85,36 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "ConsultantDashboard API", Version = "v1" });
+
+    // 🔐 Enable JWT Auth in Swagger
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter JWT token like this: **Bearer eyJhbGci...**"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 
 
 // ??? 4. CORS ?????????????????????????????????????????????????????????????????????

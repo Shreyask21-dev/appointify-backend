@@ -1,5 +1,5 @@
 ﻿using ConsultantDashboard.Core.DTOs;
-using ConsultantDashboard.Core.Models;
+using ConsultantDashboard.Core.Entities;
 using ConsultantDashboard.Services.IImplement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
