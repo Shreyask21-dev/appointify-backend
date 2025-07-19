@@ -137,6 +137,14 @@ namespace ConsultantDashboard.API.Controllers
 }
         }
 
+        [HttpPost("assign-shifts")]
+        public async Task<IActionResult> AssignShiftsToPlan([FromBody] AssignShiftsToPlanDto dto)
+        {
+            var result = await _service.AssignShiftsToPlanAsync(dto);
+            return result ? Ok() : BadRequest("Assignment failed");
+        }
+
+
 
 
 

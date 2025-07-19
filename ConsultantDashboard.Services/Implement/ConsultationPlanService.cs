@@ -30,7 +30,6 @@ namespace ConsultantDashboard.Services.Implement
                 PlanDuration = dto.PlanDuration.Trim(),
                 PlanDescription = dto.PlanDescription.Trim(),
                 PlanFeatures = dto.PlanFeatures.Trim(),
-                ShiftId = dto.ShiftId, // ✅ NEW
                 CreatedAt = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "India Standard Time"),
                 UpdatedAt = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "India Standard Time")
             };
@@ -46,7 +45,6 @@ namespace ConsultantDashboard.Services.Implement
                 PlanDuration = plan.PlanDuration,
                 PlanDescription = plan.PlanDescription,
                 PlanFeatures = plan.PlanFeatures,
-                ShiftId = plan.ShiftId, // ✅ NEW
                 CreatedAt = plan.CreatedAt,
                 UpdatedAt = plan.UpdatedAt
             };
@@ -92,7 +90,6 @@ namespace ConsultantDashboard.Services.Implement
                 PlanDuration = p.PlanDuration,
                 PlanDescription = p.PlanDescription,
                 PlanFeatures = p.PlanFeatures,
-                ShiftId = p.ShiftId, // ✅ NEW
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             });
@@ -109,7 +106,6 @@ namespace ConsultantDashboard.Services.Implement
             plan.PlanDuration = dto.PlanDuration.Trim();
             plan.PlanDescription = dto.PlanDescription.Trim();
             plan.PlanFeatures = dto.PlanFeatures.Trim();
-            plan.ShiftId = dto.ShiftId; // ✅ NEW
             plan.UpdatedAt = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "India Standard Time");
 
             await _context.SaveChangesAsync();

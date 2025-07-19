@@ -51,14 +51,12 @@ namespace ConsultantDashboard.Infrastructure.Data
                .Property(x => x.Id)
                .HasDefaultValueSql("NEWID()"); // This generates GUID
 
+                                                               //; ✅ Configure many-to-many
             builder.Entity<ConsultantShift>()
-              .HasOne(s => s.Plan)
-              .WithMany(p => p.ConsultantShifts)
-              .HasForeignKey(s => s.PlanId)
-              .OnDelete(DeleteBehavior.NoAction); // or DeleteBehavior.NoAction
+      .HasMany(s => s.Plans)
+      .WithMany(p => p.ConsultantShifts)
+      .UsingEntity(j => j.ToTable("ConsultantPlanShifts"));
 
-
-            // ✅ Store as string instead of int
             var appointmentStatusConverter = new ValueConverter<AppointmentStatus, string>(
              v => v.ToString(),                  // enum to string (when saving)
              v => (AppointmentStatus)Enum.Parse(typeof(AppointmentStatus), v)  // string to enum (when reading)

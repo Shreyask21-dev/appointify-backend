@@ -14,26 +14,25 @@ using ConsultantDashboard.Core.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
 
 namespace ConsultantDashboard.Services.Implement
 {
     public class CustomerAppointmentService : ICustomerAppointmentService
     {
         private readonly ApplicationDbContext _context;
-        private readonly string _key;
-        private readonly string _secret;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IEmailService _emailService;
-
+        private readonly Core.Models.RazorpaySettings _razorpay;
         public CustomerAppointmentService(
            ApplicationDbContext context,
            IConfiguration configuration,
            IHttpContextAccessor httpContextAccessor,
-           IEmailService emailService)
+           IEmailService emailService,
+            IOptions<Core.Models.RazorpaySettings> razorpay)
         {
             _context = context;
-            _key = configuration["Razorpay:Key"];
-            _secret = configuration["Razorpay:Secret"];
+            _razorpay = razorpay.Value;
             _httpContextAccessor = httpContextAccessor;
             _emailService = emailService;
         }
@@ -92,7 +91,7 @@ namespace ConsultantDashboard.Services.Implement
                 await _context.CustomerAppointments.AddAsync(appointment);
                 await _context.SaveChangesAsync();
 
-                RazorpayClient client = new RazorpayClient(_key, _secret);
+                RazorpayClient client = new RazorpayClient(_razorpay.Key, _razorpay.Secret);
                 Dictionary<string, object> options = new()
         {
             { "amount", appointment.Amount * 100 },
@@ -142,7 +141,7 @@ namespace ConsultantDashboard.Services.Implement
             string payload = $"{response.OrderId}|{response.PaymentId}";
             string generatedSignature;
 
-            using (var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(_secret)))
+            using (var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(_razorpay.Secret)))
             {
                 var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
                 generatedSignature = BitConverter.ToString(hash).Replace("-", "").ToLower();

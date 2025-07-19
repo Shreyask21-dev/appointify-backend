@@ -14,6 +14,7 @@ namespace ConsultantDashboard.Services.IImplement
         Task<IEnumerable<GetConsultantShiftDto>> GetByPlanAsync(Guid planId); // ✅
         Task<GetConsultantShiftDto> UpdateShiftAsync(Guid id, UpdateConsultantShiftDto dto);
         Task<bool> DeleteShiftAsync(Guid id);
+        Task<bool> AssignShiftsToPlanAsync(AssignShiftsToPlanDto dto);
 
 
 

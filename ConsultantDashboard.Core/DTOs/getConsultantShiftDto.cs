@@ -12,7 +12,7 @@ namespace ConsultantDashboard.Core.DTOs
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
         public string Name { get; set; }
-        public Guid? PlanId { get; set; }
+        public List<Guid> PlanIds { get; set; }
     }
 
 }

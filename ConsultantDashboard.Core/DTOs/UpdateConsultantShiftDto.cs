@@ -12,6 +12,7 @@ namespace ConsultantDashboard.Core.DTOs
         public string StartTime { get; set; }
         public string EndTime { get; set; }
         public string Name { get; set; }
+        public List<Guid> PlanIds { get; set; }
     }
 
 }
